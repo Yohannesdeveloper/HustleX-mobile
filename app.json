@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "HustleX",
+    "slug": "hustlex",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/Logo.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./public/Logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.hustlex.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/Logo.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.hustlex.app"
+    },
+    "web": {
+      "favicon": "./public/Logo.png",
+      "bundler": "metro"
+    },
+    "scheme": "hustlex"
+  }
+}
