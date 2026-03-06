@@ -137,7 +137,7 @@ router.post("/subscribe", auth, async (req, res) => {
       subscribedAt: subscribedAt,
       expiresAt: expiresAt,
       paymentMethod: paymentMethod || "card",
-      status: "active",
+      status: "pending_approval",
     };
 
     await user.save();
@@ -277,10 +277,10 @@ router.post("/payment-callback", async (req, res) => {
     if (status === "success" || status === "completed") {
       // Find the payment request by transaction_id
       // In production: const paymentRequest = await PaymentRequest.findOne({ transactionId: transaction_id });
-      
+
       // Update user subscription
       // This would be handled based on the stored payment request
-      
+
       res.json({ message: "Payment confirmed", transaction_id });
     } else {
       res.json({ message: "Payment failed", transaction_id });
@@ -318,6 +318,86 @@ router.post("/cancel", auth, async (req, res) => {
   } catch (error) {
     console.error("Cancel subscription error:", error);
     res.status(500).json({ message: "Failed to cancel subscription", error: error.message });
+  }
+});
+
+const { adminAuth } = require("../middleware/auth");
+
+// ================================
+// @route   GET /api/pricing/admin/pending-subscriptions
+// @desc    Get all users with pending subscriptions
+// @access  Admin
+// ================================
+router.get("/admin/pending-subscriptions", adminAuth, async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const users = await User.find({
+      "subscription.status": "pending_approval"
+    }).select("email profile subscription");
+
+    res.json({ subscriptions: users });
+  } catch (error) {
+    console.error("Fetch pending subscriptions error:", error);
+    res.status(500).json({ message: "Failed to fetch pending subscriptions" });
+  }
+});
+
+// ================================
+// @route   POST /api/pricing/admin/approve/:userId
+// @desc    Approve a pending subscription
+// @access  Admin
+// ================================
+router.post("/admin/approve/:userId", adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const User = require("../models/User");
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.subscription) {
+      user.subscription.status = "active";
+      user.subscription.subscribedAt = new Date();
+      // Set expiration to 1 month from now
+      const expiresAt = new Date();
+      expiresAt.setMonth(expiresAt.getMonth() + 1);
+      user.subscription.expiresAt = expiresAt;
+      await user.save();
+    }
+
+    res.json({ message: "Subscription approved successfully" });
+  } catch (error) {
+    console.error("Approve subscription error:", error);
+    res.status(500).json({ message: "Failed to approve subscription" });
+  }
+});
+
+// ================================
+// @route   POST /api/pricing/admin/reject/:userId
+// @desc    Reject a pending subscription
+// @access  Admin
+// ================================
+router.post("/admin/reject/:userId", adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const User = require("../models/User");
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.subscription) {
+      user.subscription.status = "cancelled"; // or remove it
+      await user.save();
+    }
+
+    res.json({ message: "Subscription rejected successfully" });
+  } catch (error) {
+    console.error("Reject subscription error:", error);
+    res.status(500).json({ message: "Failed to reject subscription" });
   }
 });
 

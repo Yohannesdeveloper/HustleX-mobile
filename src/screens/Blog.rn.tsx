@@ -17,11 +17,17 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../types";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppSelector } from "../store/hooks";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { setTotalBlogsCount } from "../store/blogSlice";
 import { useAuth } from "../store/hooks";
 import apiService from "../services/api-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Footer from "../components/Footer.rn";
+import BottomNav from "../components/BottomNav.rn";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 type Blog = {
@@ -63,8 +69,10 @@ const categories = [
 ];
 
 const Blog: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const dispatch = useAppDispatch();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const { user } = useAuth();
   const [blogs, setBlogs] = useState<Blog[]>([]);
@@ -93,7 +101,7 @@ const Blog: React.FC = () => {
   }, [user, route.params]);
 
   const handleEdit = (blogId: string) => {
-    navigation.navigate("BlogEdit" as never, { blogId } as never);
+    navigation.navigate("EditBlog", { id: blogId });
   };
 
   const handleDelete = async (blogId: string) => {
@@ -124,6 +132,9 @@ const Blog: React.FC = () => {
         category: category === "All" ? undefined : category,
       });
       setBlogs(res.blogs || []);
+      if (res.pagination) {
+        dispatch(setTotalBlogsCount(res.pagination.total));
+      }
     } catch (e) {
       console.error("Failed to load blogs", e);
     } finally {
@@ -148,20 +159,35 @@ const Blog: React.FC = () => {
       flex: 1,
       backgroundColor: darkMode ? "#000000" : "#ffffff",
     },
+    backNavContainer: {
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
+    },
     header: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "flex-end",
       padding: 20,
       gap: 12,
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.6)",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderBottomWidth: 1,
       borderBottomColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
     },
     searchInput: {
       flex: 1,
       height: 44,
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.7)" : "#ffffff",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
       borderRadius: 12,
       paddingHorizontal: 16,
       fontSize: 16,
@@ -172,7 +198,7 @@ const Blog: React.FC = () => {
     categoryButton: {
       height: 44,
       paddingHorizontal: 16,
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.7)" : "#ffffff",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
       borderRadius: 12,
       borderWidth: 1,
       borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
@@ -190,7 +216,8 @@ const Blog: React.FC = () => {
       flex: 1,
     },
     content: {
-      padding: 20,
+      paddingTop: 20,
+      paddingBottom: 140,
     },
     blogGrid: {
       flexDirection: "row",
@@ -200,7 +227,7 @@ const Blog: React.FC = () => {
     blogCard: {
       flex: 1,
       minWidth: "100%",
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       overflow: "hidden",
       borderWidth: 1,
@@ -239,9 +266,9 @@ const Blog: React.FC = () => {
       padding: 20,
     },
     blogMeta: {
-      fontSize: Platform.OS === 'android' ? 12 : Math.max(12, 12), // Ensure positive fontSize
+      fontSize: 12,
       textTransform: "uppercase",
-      letterSpacing: Platform.OS === 'android' ? 0 : 1, // Set letterSpacing to 0 on Android to prevent calculation issues
+      letterSpacing: 1,
       color: darkMode ? "#9ca3af" : "#6b7280",
       marginBottom: 12,
     },
@@ -322,6 +349,20 @@ const Blog: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* HomeNavbar removed */}
+      {/* Back Navigation Bar */}
+      <View style={[styles.backNavContainer, { paddingTop: Math.max(insets.top, 12) }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={styles.backText}>Blog</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.header}>
         <TextInput
           style={styles.searchInput}
@@ -361,7 +402,7 @@ const Blog: React.FC = () => {
               >
                 <TouchableOpacity
                   activeOpacity={0.9}
-                  onPress={() => navigation.navigate("BlogPost" as never, { blogId: b._id } as never)}
+                  onPress={() => navigation.navigate("BlogPost", { id: b._id })}
                 >
                   <View style={styles.blogImageContainer}>
                     {b.imageUrl ? (
@@ -415,6 +456,7 @@ const Blog: React.FC = () => {
             ))}
           </View>
         )}
+        <Footer />
       </ScrollView>
 
       {/* Category Picker Modal */}
@@ -429,7 +471,7 @@ const Blog: React.FC = () => {
                 marginBottom: 16,
               }}
             >
-              <Text style={{ fontSize: 20, fontWeight: "700", color: darkMode ? "#ffffff" : "#000000" }}>
+              <Text style={[styles.pickerItemText, { fontSize: 20, fontWeight: "700" }]}>
                 Select Category
               </Text>
               <TouchableOpacity onPress={() => setShowCategoryPicker(false)}>

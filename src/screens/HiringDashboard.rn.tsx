@@ -29,7 +29,7 @@ import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import MessagesTab from "../components/MessagesTab.rn";
 import FindFreelancersTab from "../components/FindFreelancersTab.rn";
 
-type TabType = "overview" | "applications" | "jobs" | "analytics" | "profile" | "messages" | "findFreelancers";
+type TabType = "overview" | "applications" | "jobs" | "analytics" | "profile" | "messages" | "findFreelancers" | "jobAdmin";
 type MessagesSubTabType = "find" | "messages";
 
 interface AnalyticsData {
@@ -66,7 +66,7 @@ const HiringDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>(initialTab as TabType);
   const [messagesSubTab, setMessagesSubTab] = useState<MessagesSubTabType>("messages");
   const [sharedFreelancers, setSharedFreelancers] = useState<any[]>([]);
-  
+
   // Memoize setSharedFreelancers to prevent unnecessary re-renders
   const memoizedSetSharedFreelancers = useCallback((freelancers: any[]) => {
     setSharedFreelancers(freelancers);
@@ -101,11 +101,7 @@ const HiringDashboard: React.FC = () => {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   const handleBackPress = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return true;
-    }
-    navigation.navigate("HomeFinal" as never);
+    (navigation as any).navigate("MainSwipeableTabs");
     return true;
   }, [navigation]);
 
@@ -163,11 +159,12 @@ const HiringDashboard: React.FC = () => {
       setUserJobs(jobs);
     } catch (error) {
       console.error("Error fetching user jobs:", error);
-      setUserJobs([]);
     } finally {
       setJobsLoading(false);
     }
   };
+
+
 
   const handleClearAllJobs = async () => {
     if (!user) return;
@@ -213,8 +210,8 @@ const HiringDashboard: React.FC = () => {
         const companyNameFromUser = user.profile.firstName && user.profile.lastName
           ? `${user.profile.firstName} ${user.profile.lastName} Company`
           : user.profile.firstName
-          ? `${user.profile.firstName} Company`
-          : '';
+            ? `${user.profile.firstName} Company`
+            : '';
         setCompanyProfile({
           companyName: companyNameFromUser,
           industry: '',
@@ -265,7 +262,7 @@ const HiringDashboard: React.FC = () => {
     try {
       const userJobs = await apiService.getMyJobs();
       const applicationsPromises = userJobs.map((job: any) =>
-        apiService.getJobApplications(job._id)
+        apiService.getApplications(job._id)
       );
       const applicationsResponses = await Promise.all(applicationsPromises);
       const allApplications = applicationsResponses.flatMap(
@@ -275,7 +272,7 @@ const HiringDashboard: React.FC = () => {
       const totalJobs = userJobs.length;
       const totalApplications = allApplications.length;
 
-      const statusCounts = allApplications.reduce((acc, app) => {
+      const statusCounts = allApplications.reduce((acc: Record<string, number>, app: any) => {
         const status = app.status || "pending";
         acc[status] = (acc[status] || 0) + 1;
         return acc;
@@ -290,18 +287,18 @@ const HiringDashboard: React.FC = () => {
         totalApplications > 0 ? (hiredCount / totalApplications) * 100 : 0;
 
       const hiredApplications = allApplications.filter(
-        (app) => app.status === "hired" && app.updatedAt
+        (app: any) => app.status === "hired" && app.updatedAt
       );
       const avgDaysToHire =
         hiredApplications.length > 0
           ? hiredApplications.reduce((sum, app) => {
-              const hireDate = new Date(app.updatedAt);
-              const postDate = new Date(app.job?.createdAt || app.createdAt);
-              const days = Math.ceil(
-                (hireDate.getTime() - postDate.getTime()) / (1000 * 60 * 60 * 24)
-              );
-              return sum + days;
-            }, 0) / hiredApplications.length
+            const hireDate = new Date(app.updatedAt);
+            const postDate = new Date(app.job?.createdAt || app.createdAt);
+            const days = Math.ceil(
+              (hireDate.getTime() - postDate.getTime()) / (1000 * 60 * 60 * 24)
+            );
+            return sum + days;
+          }, 0) / hiredApplications.length
           : 0;
 
       const categoryStats = userJobs.reduce((acc, job) => {
@@ -313,7 +310,7 @@ const HiringDashboard: React.FC = () => {
         return acc;
       }, {} as Record<string, { jobs: number; applications: number; hired: number }>);
 
-      allApplications.forEach((app) => {
+      allApplications.forEach((app: any) => {
         const category = app.job?.category || "Other";
         if (categoryStats[category]) {
           categoryStats[category].applications += 1;
@@ -324,7 +321,7 @@ const HiringDashboard: React.FC = () => {
       });
 
       const categoryPerformance = Object.entries(categoryStats)
-        .map(([category, stats]) => ({
+        .map(([category, stats]: [string, any]) => ({
           category,
           applications: stats.applications,
           conversion:
@@ -361,11 +358,11 @@ const HiringDashboard: React.FC = () => {
       const responseTime =
         respondedApplications.length > 0
           ? respondedApplications.reduce((sum, app) => {
-              const responseDate = new Date(app.updatedAt);
-              const submitDate = new Date(app.createdAt);
-              const hours = (responseDate.getTime() - submitDate.getTime()) / (1000 * 60 * 60);
-              return sum + hours;
-            }, 0) / respondedApplications.length
+            const responseDate = new Date(app.updatedAt);
+            const submitDate = new Date(app.createdAt);
+            const hours = (responseDate.getTime() - submitDate.getTime()) / (1000 * 60 * 60);
+            return sum + hours;
+          }, 0) / respondedApplications.length
           : 0;
 
       const jobViews = userJobs.reduce((sum, job) => sum + ((job as any).views || 0), 0);
@@ -395,7 +392,7 @@ const HiringDashboard: React.FC = () => {
     switch (activeTab) {
       case "overview":
         return (
-          <ScrollView 
+          <ScrollView
             style={styles.tabContent}
             contentContainerStyle={styles.tabContentContainer}
           >
@@ -438,7 +435,9 @@ const HiringDashboard: React.FC = () => {
             {/* Recent Jobs Summary */}
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Recent Jobs</Text>
+                <Text style={styles.headerTitle}>Hiring Dashboard</Text>
+                <View style={{ flex: 1 }} />
+
                 <TouchableOpacity onPress={() => setActiveTab("jobs")}>
                   <Text style={styles.viewAllText}>View All</Text>
                 </TouchableOpacity>
@@ -520,7 +519,7 @@ const HiringDashboard: React.FC = () => {
 
       case "jobs":
         return (
-          <ScrollView 
+          <ScrollView
             style={styles.tabContent}
             contentContainerStyle={styles.tabContentContainer}
           >
@@ -641,105 +640,6 @@ const HiringDashboard: React.FC = () => {
           </ScrollView>
         );
 
-      case "analytics":
-        return (
-          <ScrollView 
-            style={styles.tabContent}
-            contentContainerStyle={styles.tabContentContainer}
-          >
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Hiring Analytics</Text>
-              <Text style={styles.sectionSubtitle}>
-                Comprehensive insights into your hiring performance
-              </Text>
-            </View>
-
-            {analyticsLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#06b6d4" />
-                <Text style={styles.loadingText}>Loading analytics...</Text>
-              </View>
-            ) : (
-              <>
-                <View style={styles.metricsGrid}>
-                  <View style={styles.metricCard}>
-                    <View style={styles.metricIcon}>
-                      <Ionicons name="briefcase" size={24} color="#ffffff" />
-                    </View>
-                    <Text style={styles.metricValue}>{analyticsData.totalJobs}</Text>
-                    <Text style={styles.metricLabel}>Total Jobs</Text>
-                  </View>
-                  <View style={styles.metricCard}>
-                    <View style={[styles.metricIcon, { backgroundColor: "#22c55e" }]}>
-                      <Ionicons name="people" size={24} color="#ffffff" />
-                    </View>
-                    <Text style={styles.metricValue}>{analyticsData.totalApplications}</Text>
-                    <Text style={styles.metricLabel}>Applications</Text>
-                  </View>
-                  <View style={styles.metricCard}>
-                    <View style={[styles.metricIcon, { backgroundColor: "#a855f7" }]}>
-                      <Ionicons name="checkmark-circle" size={24} color="#ffffff" />
-                    </View>
-                    <Text style={styles.metricValue}>{analyticsData.hiredCount}</Text>
-                    <Text style={styles.metricLabel}>Hired</Text>
-                  </View>
-                  <View style={styles.metricCard}>
-                    <View style={[styles.metricIcon, { backgroundColor: "#f59e0b" }]}>
-                      <Ionicons name="time" size={24} color="#ffffff" />
-                    </View>
-                    <Text style={styles.metricValue}>{analyticsData.avgDaysToHire}</Text>
-                    <Text style={styles.metricLabel}>Avg. Days to Hire</Text>
-                  </View>
-                </View>
-
-                <View style={styles.chartCard}>
-                  <Text style={styles.chartTitle}>Application Trends</Text>
-                  {analyticsData.monthlyTrends.length > 0 ? (
-                    analyticsData.monthlyTrends.map((item, index) => (
-                      <View key={item.month} style={styles.trendItem}>
-                        <Text style={styles.trendMonth}>{item.month}</Text>
-                        <View style={styles.trendValues}>
-                          <View style={styles.trendValue}>
-                            <View style={[styles.trendDot, { backgroundColor: "#3b82f6" }]} />
-                            <Text style={styles.trendText}>{item.applications}</Text>
-                          </View>
-                          <View style={styles.trendValue}>
-                            <View style={[styles.trendDot, { backgroundColor: "#22c55e" }]} />
-                            <Text style={styles.trendText}>{item.hired}</Text>
-                          </View>
-                        </View>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.noDataText}>No data available yet</Text>
-                  )}
-                </View>
-
-                <View style={styles.chartCard}>
-                  <Text style={styles.chartTitle}>Category Performance</Text>
-                  {analyticsData.categoryPerformance.length > 0 ? (
-                    analyticsData.categoryPerformance.map((item, index) => (
-                      <View key={item.category} style={styles.categoryItem}>
-                        <Text style={styles.categoryName}>{item.category}</Text>
-                        <View style={styles.categoryStats}>
-                          <Text style={styles.categoryApplications}>
-                            {item.applications} apps
-                          </Text>
-                          <Text style={styles.categoryConversion}>
-                            {item.conversion} conversion
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.noDataText}>No data available yet</Text>
-                  )}
-                </View>
-              </>
-            )}
-          </ScrollView>
-        );
-
       case "messages":
         return (
           <View style={[styles.tabContent, { flex: 1 }]}>
@@ -787,15 +687,15 @@ const HiringDashboard: React.FC = () => {
     },
     header: {
       paddingHorizontal: 20,
-      paddingTop: 24,
+      paddingTop: 0,
       paddingBottom: 0,
-      backgroundColor: darkMode ? "rgba(6, 182, 212, 0.15)" : "rgba(6, 182, 212, 0.1)",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderBottomWidth: 2,
       borderBottomColor: "#06b6d4",
       marginBottom: 0,
       ...(Platform.OS === 'web' ? {
-        boxShadow: darkMode 
-          ? "0 4px 6px rgba(6, 182, 212, 0.2)" 
+        boxShadow: darkMode
+          ? "0 4px 6px rgba(6, 182, 212, 0.2)"
           : "0 2px 4px rgba(0, 0, 0, 0.1)",
       } : {
         shadowColor: "#06b6d4",
@@ -808,25 +708,27 @@ const HiringDashboard: React.FC = () => {
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 8,
     },
     headerBackButton: {
       padding: 6,
     },
     headerTitle: {
-      fontSize: 32,
+      fontSize: 24,
       fontWeight: "800",
-      color: darkMode ? "#06b6d4" : "#06b6d4",
+      color: "#06b6d4",
       textAlign: "center",
-      marginBottom: 20,
+      marginBottom: 0,
     },
+
     headerQuickActions: {
       marginBottom: 16,
     },
     tabsContainer: {
+      flex: 1,
+      marginLeft: 8,
       backgroundColor: "transparent",
-      borderTopWidth: 1,
-      borderTopColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
     },
     tabsScrollView: {
       flexDirection: "row",
@@ -941,7 +843,7 @@ const HiringDashboard: React.FC = () => {
       padding: 16,
       alignItems: "center",
       borderWidth: 1,
-      borderColor: darkMode ? "rgba(255, 255, 255, 0.2)" : "rgba(6, 182, 212, 0.3)",
+      borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
     },
     quickActionTitle: {
       fontSize: 16,
@@ -1306,7 +1208,9 @@ const HiringDashboard: React.FC = () => {
     { id: "overview" as TabType, label: "Overview", icon: "stats-chart" },
     { id: "applications" as TabType, label: "Applications", icon: "people" },
     { id: "jobs" as TabType, label: "My Jobs", icon: "briefcase" },
-    { id: "analytics" as TabType, label: "Analytics", icon: "bar-chart" },
+    ...(user?.roles?.includes('admin') ? [
+      { id: "jobAdmin" as TabType, label: "Job Moderation", icon: "shield-checkmark" }
+    ] : []),
     { id: "findFreelancers" as TabType, label: "Find Freelancers", icon: "people" },
     { id: "messages" as TabType, label: "Messages", icon: "chatbubbles" },
     { id: "profile" as TabType, label: "Profile", icon: "person" },
@@ -1327,52 +1231,55 @@ const HiringDashboard: React.FC = () => {
           >
             <Ionicons name="arrow-back" size={20} color={darkMode ? "#ffffff" : "#111827"} />
           </TouchableOpacity>
+
+          {/* Tabs */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
+            <View style={styles.tabsScrollView}>
+              {tabs.map((tab) => (
+                <TouchableOpacity
+                  key={tab.id}
+                  style={[styles.tab, activeTab === tab.id && styles.tabActive]}
+                  onPress={() => {
+                    if (tab.id === "profile") {
+                      navigation.navigate("CompanyProfile" as never);
+                    } else if (tab.id === "messages") {
+                      (navigation as any).navigate("ChatMessages");
+                      return;
+                    } else if (tab.id === "findFreelancers") {
+                      (navigation as any).navigate("FindFreelancers");
+                      return;
+                    } else if (tab.id === "jobAdmin") {
+                      (navigation as any).navigate("JobAdmin");
+                      return;
+                    } else {
+                      setActiveTab(tab.id);
+                    }
+                  }}
+                >
+                  {tab.id === "profile" && companyLogo ? (
+                    <Image
+                      source={{ uri: companyLogo }}
+                      style={{ width: 20, height: 20, borderRadius: 10 }}
+                    />
+                  ) : (
+                    <Ionicons
+                      name={tab.icon as any}
+                      size={20}
+                      color={activeTab === tab.id
+                        ? (darkMode ? "#ffffff" : "#000000")
+                        : (darkMode ? "#9ca3af" : "#6b7280")}
+                    />
+                  )}
+                  <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
         </View>
-      
-        {/* Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsContainer}>
-          <View style={styles.tabsScrollView}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab.id}
-                style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-                onPress={() => {
-                  if (tab.id === "profile") {
-                    navigation.navigate("CompanyProfile" as never);
-                  } else if (tab.id === "messages") {
-                    (navigation as any).navigate("ChatMessages");
-                    return;
-                  } else if (tab.id === "findFreelancers") {
-                    (navigation as any).navigate("FindFreelancers");
-                    return;
-                  } else {
-                    setActiveTab(tab.id);
-                  }
-                }}
-              >
-                {tab.id === "profile" && companyLogo ? (
-                  <Image
-                    source={{ uri: companyLogo }}
-                    style={{ width: 20, height: 20, borderRadius: 10 }}
-                  />
-                ) : (
-                  <Ionicons
-                    name={tab.icon as any}
-                    size={20}
-                    color={activeTab === tab.id
-                      ? (darkMode ? "#ffffff" : "#000000")
-                      : (darkMode ? "#9ca3af" : "#6b7280")}
-                  />
-                )}
-                <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
       </View>
-      
+
       {renderTabContent()}
       <Modal
         visible={showClearConfirm}
@@ -1410,7 +1317,7 @@ const HiringDashboard: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 

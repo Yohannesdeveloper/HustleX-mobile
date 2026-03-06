@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
       enum: ["freelancer", "client", "admin"],
       default: ["freelancer"],
       validate: {
-        validator: function(roles) {
+        validator: function (roles) {
           return roles && roles.length > 0;
         },
         message: 'At least one role is required'
@@ -28,7 +28,7 @@ const userSchema = new mongoose.Schema(
     },
     currentRole: {
       type: String,
-      enum: ["freelancer", "client"],
+      enum: ["freelancer", "client", "admin"],
       default: "freelancer",
     },
     profile: {
@@ -68,6 +68,7 @@ const userSchema = new mongoose.Schema(
       portfolio: String,
       experience: String,
       education: String,
+      workExperience: String,
       avatar: String,
 
       // Profile completion tracking
@@ -98,7 +99,7 @@ const userSchema = new mongoose.Schema(
       paymentMethod: String,
       status: {
         type: String,
-        enum: ["active", "cancelled", "expired"],
+        enum: ["active", "cancelled", "expired", "pending_approval"],
         default: "active",
       },
     },
@@ -122,9 +123,9 @@ userSchema.pre("save", async function (next) {
 });
 
 // Virtual for backward compatibility - returns currentRole as role
-userSchema.virtual('role').get(function() {
+userSchema.virtual('role').get(function () {
   return this.currentRole;
-}).set(function(value) {
+}).set(function (value) {
   this.currentRole = value;
   // Ensure the role is in the roles array
   if (!this.roles.includes(value)) {

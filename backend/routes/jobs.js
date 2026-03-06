@@ -144,6 +144,7 @@ router.post(
         views: 0,
         postedBy: req.user._id,
         isActive: true,
+        approved: req.user.roles && req.user.roles.includes('admin') ? true : false,
         applicationCount: 0,
       };
 
@@ -157,27 +158,30 @@ router.post(
           auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
         });
         const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+
+        const isAdminPost = job.approved;
+
         await transporter.sendMail({
           from: `HustleX <${process.env.EMAIL_USER}>`,
           to: adminEmail,
-          subject: `New job posted: ${job.title}`,
-          html: `<p>A new job was posted and awaits approval.</p>
+          subject: isAdminPost ? `New job posted (Auto-approved): ${job.title}` : `New job posted (Requires Approval): ${job.title}`,
+          html: `<p>${isAdminPost ? 'A new job was posted by an admin and auto-approved.' : 'A new job was posted and awaits approval.'}</p>
                  <p><strong>Title:</strong> ${job.title}</p>
                  <p><strong>Category:</strong> ${job.category}</p>
                  <p><strong>Budget:</strong> ${job.budget}</p>
                  <p><strong>Posted By:</strong> ${req.user.email}</p>
-                 <p>Visit the admin panel to approve or decline.</p>`,
+                 <p>${isAdminPost ? 'The job is already visible on the platform.' : 'Visit the admin panel to approve or decline.'}</p>`,
         });
 
-        // Notify job owner that their job is pending approval
+        // Notify job owner that their job is received
         if (req.user?.email) {
           await transporter.sendMail({
             from: `HustleX <${process.env.EMAIL_USER}>`,
             to: req.user.email,
-            subject: `Your job is pending approval: ${job.title}`,
+            subject: isAdminPost ? `Your job is now live: ${job.title}` : `Your job is pending approval: ${job.title}`,
             html: `<p>Hi,</p>
-                   <p>Thanks for posting on HustleX. Your job "<strong>${job.title}</strong>" is <strong>pending approval</strong> and will be reviewed shortly.</p>
-                   <p>We’ll email you once it’s approved and visible to freelancers.</p>
+                   <p>Thanks for posting on HustleX. Your job "<strong>${job.title}</strong>" ${isAdminPost ? 'is <strong>now live</strong> and visible to freelancers.' : 'is <strong>pending approval</strong> and will be reviewed shortly.'}</p>
+                   ${isAdminPost ? '<p>You can track applications from your dashboard.</p>' : '<p>We’ll email you once it’s approved and visible to freelancers.</p>'}
                    <p>If you need to make changes, you can edit the posting from your dashboard.</p>
                    <p>— HustleX Team</p>`,
           });
@@ -220,34 +224,40 @@ router.put("/:id/approve", adminAuth, async (req, res) => {
   try {
     const job = await Job.findByIdAndUpdate(
       req.params.id,
-      { approved: true },
+      { approved: true, status: "active" },
       { new: true }
-    );
+    ).populate("postedBy", "email");
+
     if (!job) return res.status(404).json({ message: "Job not found" });
 
-    // Notify job owner via email about approval
-    try {
-      const owner = await User.findById(job.postedBy).select("email");
-      if (owner?.email) {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        });
-        await transporter.sendMail({
-          from: `HustleX <${process.env.EMAIL_USER}>`,
-          to: owner.email,
-          subject: `Your job was approved: ${job.title}`,
-          html: `<p>Hello,</p>
-                 <p>Your job "<strong>${job.title}</strong>" has been approved and is now visible to freelancers.</p>
-                 <p>Category: ${job.category || ''}</p>
-                 <p>Budget: ${job.budget || ''}</p>
-                 <p>Thank you for using HustleX.</p>`,
-        });
+    // Notify job owner via email - move outside of main flow or at least don't block
+    const sendApprovalEmail = async () => {
+      try {
+        if (job.postedBy?.email) {
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+          });
+          await transporter.sendMail({
+            from: `HustleX <${process.env.EMAIL_USER}>`,
+            to: job.postedBy.email,
+            subject: `Your job was approved: ${job.title}`,
+            html: `<p>Hello,</p>
+                   <p>Your job "<strong>${job.title}</strong>" has been approved and is now visible to freelancers.</p>
+                   <p>Category: ${job.category || ''}</p>
+                   <p>Budget: ${job.budget || ''}</p>
+                   <p>Thank you for using HustleX.</p>`,
+          });
+          console.log(`Approval email sent to ${job.postedBy.email}`);
+        }
+      } catch (mailErr) {
+        console.error("Failed to send approval email:", mailErr.message);
       }
-    } catch (mailErr) {
-      console.error("Failed to send approval email:", mailErr.message);
-      // continue without failing the request
-    }
+    };
+
+    // Run email notification in background
+    sendApprovalEmail();
+
     res.json({ message: "Job approved", job });
   } catch (error) {
     console.error("Approve job error:", error);
@@ -263,38 +273,49 @@ router.put("/:id/approve", adminAuth, async (req, res) => {
 router.put("/:id/decline", adminAuth, async (req, res) => {
   try {
     const { reason } = req.body || {};
+    console.log(`[DEcline] Job ID: ${req.params.id}, Reason: ${reason}`);
+
     const job = await Job.findByIdAndUpdate(
       req.params.id,
       { approved: false, status: "declined", declineReason: reason },
       { new: true }
-    );
-    if (!job) return res.status(404).json({ message: "Job not found" });
+    ).populate("postedBy", "email");
 
-    // Notify job owner via email about decline
-    try {
-      const owner = await User.findById(job.postedBy).select("email");
-      if (owner?.email) {
-        const transporter = nodemailer.createTransport({
-          service: "gmail",
-          auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-        });
-        await transporter.sendMail({
-          from: `HustleX <${process.env.EMAIL_USER}>`,
-          to: owner.email,
-          subject: `Your job was declined: ${job.title}`,
-          html: `<p>Hello,</p>
-                 <p>Your job "<strong>${job.title}</strong>" was declined${reason ? ` for the following reason: <em>${reason}</em>` : "."}</p>
-                 <p>Please review and resubmit if appropriate. Thank you.</p>`,
-        });
-      }
-    } catch (mailErr) {
-      console.error("Failed to send decline email:", mailErr.message);
-      // continue without failing the request
+    if (!job) {
+      console.log(`[DEcline] Job not found: ${req.params.id}`);
+      return res.status(404).json({ message: "Job not found" });
     }
+
+    // Notify job owner via email - non-blocking
+    const sendDeclineEmail = async () => {
+      try {
+        if (job.postedBy?.email) {
+          const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+          });
+          await transporter.sendMail({
+            from: `HustleX <${process.env.EMAIL_USER}>`,
+            to: job.postedBy.email,
+            subject: `Your job was declined: ${job.title}`,
+            html: `<p>Hello,</p>
+                   <p>Your job "<strong>${job.title}</strong>" was declined${reason ? ` for the following reason: <em>${reason}</em>` : "."}</p>
+                   <p>Please review and resubmit if appropriate. Thank you.</p>`,
+          });
+          console.log(`Decline email sent to ${job.postedBy.email}`);
+        }
+      } catch (mailErr) {
+        console.error("Failed to send decline email:", mailErr.message);
+      }
+    };
+
+    // Run email notification in background
+    sendDeclineEmail();
+
     res.json({ message: "Job declined", job });
   } catch (error) {
     console.error("Decline job error:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error", detail: error.message });
   }
 });
 

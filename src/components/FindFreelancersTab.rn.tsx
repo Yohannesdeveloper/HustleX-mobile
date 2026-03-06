@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Dimensions,
   Platform,
+  Modal,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,14 +37,38 @@ interface Freelancer {
   profile?: {
     firstName?: string;
     lastName?: string;
+    phone?: string;
+    location?: string;
     bio?: string;
     skills?: string[];
-    location?: string;
     experienceLevel?: string;
-    profilePicture?: string;
-    primarySkill?: string;
+    yearsOfExperience?: string;
+    portfolioUrl?: string;
+    certifications?: string[];
+    cvUrl?: string;
+    availability?: string;
     monthlyRate?: string;
     currency?: string;
+    preferredJobTypes?: string[];
+    workLocation?: string;
+    linkedinUrl?: string;
+    githubUrl?: string;
+    websiteUrl?: string;
+    // Legacy fields for backward compatibility
+    linkedin?: string;
+    github?: string;
+    portfolio?: string;
+    experience?: string;
+    education?: string;
+    workExperience?: string;
+    avatar?: string;
+    // Profile completion tracking
+    isProfileComplete?: boolean;
+    profileCompletedAt?: Date;
+    // Primary skill for display
+    primarySkill?: string;
+    // Profile picture field
+    profilePicture?: string;
   };
   roles?: string[];
 }
@@ -80,6 +105,8 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedFreelancer, setSelectedFreelancer] = useState<Freelancer | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const hasFetchedRef = useRef(false);
   const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +123,7 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
       console.log("[FindFreelancersTab] fetchFreelancers called, retries:", retries);
       setLoading(true);
       setError(null);
-      
+
       // Set a timeout to prevent infinite loading
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
@@ -108,13 +135,13 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
 
       const result = await apiService.getFreelancers();
       console.log("[FindFreelancersTab] Fetched freelancers data:", result);
-      
+
       // Clear timeout on success
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
         loadingTimeoutRef.current = null;
       }
-      
+
       // Handle API response - it might return { freelancers: [...] } or just [...]
       const data = Array.isArray(result) ? result : result?.freelancers || [];
       console.log("[FindFreelancersTab] Number of freelancers before deduplication:", data.length);
@@ -122,7 +149,7 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
       // Deduplicate freelancers by _id - keep the first occurrence
       const uniqueFreelancers = data.reduce((acc: Freelancer[], current: Freelancer) => {
         const existingIndex = acc.findIndex((f) => f._id === current._id);
-        
+
         if (existingIndex === -1) {
           // New freelancer, add it
           acc.push(current);
@@ -150,7 +177,7 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
       }
     } catch (error: any) {
       console.error("[FindFreelancersTab] Error fetching freelancers:", error);
-      
+
       // Clear timeout on error
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current);
@@ -355,28 +382,38 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
   // Calculate cards per row and card width based on screen width
   const getCardStyle = () => {
     if (screenWidth < 400) {
-      return { width: "100%" };
+      return { width: screenWidth * 0.95 }; // Convert percentage to actual pixel value
     }
     if (screenWidth < 600) {
-      return { width: "100%" };
+      return { width: screenWidth * 0.95 };
     }
     if (screenWidth < 1000) {
-      return { width: "47%" };
+      return { width: screenWidth * 0.47 };
     }
     if (screenWidth < 1400) {
-      return { width: "31%" };
+      return { width: screenWidth * 0.31 };
     }
-    return { width: "23%" };
+    return { width: screenWidth * 0.23 };
   };
 
   const cardStyle = getCardStyle();
 
   const handleMessage = (freelancer: Freelancer) => {
     // Navigate to messages tab with freelancer selected
-    navigation.navigate("FreelancingDashboard" as never, {
+    (navigation as any).navigate("FreelancingDashboard", {
       tab: "messages",
       freelancerId: freelancer._id,
-    } as never);
+    });
+  };
+
+  const handleViewProfile = (freelancer: Freelancer) => {
+    setSelectedFreelancer(freelancer);
+    setShowProfileModal(true);
+  };
+
+  const closeProfileModal = () => {
+    setShowProfileModal(false);
+    setSelectedFreelancer(null);
   };
 
   const styles = StyleSheet.create({
@@ -604,6 +641,124 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
       color: "#ef4444",
       ...(Platform.OS === "android" && { letterSpacing: 0 }),
     },
+    // Modal Styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      width: '90%',
+      maxHeight: '80%',
+      borderRadius: 16,
+      padding: 20,
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+      paddingBottom: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    modalTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+    },
+    closeButton: {
+      padding: 8,
+    },
+    modalBody: {
+      flex: 1,
+    },
+    profileHeader: {
+      alignItems: 'center',
+      marginBottom: 20,
+      paddingBottom: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    profileAvatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: 'rgba(6, 182, 212, 0.1)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 15,
+      borderWidth: 2,
+      borderColor: 'rgba(6, 182, 212, 0.3)',
+    },
+    profileName: {
+      fontSize: 22,
+      fontWeight: '700',
+      marginBottom: 5,
+    },
+    profileEmail: {
+      fontSize: 16,
+      marginBottom: 10,
+    },
+    profileSection: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginBottom: 10,
+    },
+    profileBio: {
+      fontSize: 16,
+      lineHeight: 24,
+    },
+    skillsContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+    skillTag: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    skillText: {
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    detailsGrid: {
+      gap: 12,
+    },
+    detailItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    detailText: {
+      fontSize: 16,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: 12,
+      marginTop: 20,
+      paddingTop: 20,
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    modalActionButton: {
+      flex: 1,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: 12,
+      borderRadius: 12,
+      gap: 8,
+    },
+    modalActionText: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
 
   console.log("[FindFreelancersTab] Render - loading:", loading, "freelancers:", freelancers.length, "filtered:", filteredFreelancers.length, "error:", error);
@@ -671,8 +826,8 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
               {searchTerm
                 ? "Try adjusting your search"
                 : error
-                ? error
-                : "No freelancers available at the moment"}
+                  ? error
+                  : "No freelancers available at the moment"}
             </Text>
           </View>
         ) : (
@@ -689,7 +844,7 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
               <Animated.View
                 key={freelancer._id}
                 entering={FadeIn.duration(300).delay(index * 50)}
-                style={[styles.freelancerCard, cardStyle]}
+                style={[styles.freelancerCard, typeof cardStyle === 'object' ? cardStyle : {}]}
               >
                 <View style={styles.freelancerHeader}>
                   {/* Avatar */}
@@ -724,18 +879,7 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
                         {location}
                       </Text>
                     </View>
-                    {monthlyRate !== "0" && (
-                      <View style={styles.freelancerDetail}>
-                        <Ionicons
-                          name="briefcase"
-                          size={14}
-                          color={darkMode ? "#06b6d4" : "#06b6d4"}
-                        />
-                        <Text style={styles.freelancerDetailText}>
-                          {monthlyRate} {currency}/mo
-                        </Text>
-                      </View>
-                    )}
+
                   </View>
                 </View>
 
@@ -761,7 +905,10 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
 
                 {/* Actions */}
                 <View style={styles.freelancerActions}>
-                  <TouchableOpacity style={styles.viewProfileButton}>
+                  <TouchableOpacity
+                    style={styles.viewProfileButton}
+                    onPress={() => handleViewProfile(freelancer)}
+                  >
                     <Text style={styles.viewProfileButtonText}>View Profile</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -776,6 +923,234 @@ const FindFreelancersTab: React.FC<FindFreelancersTabProps> = ({
           })
         )}
       </ScrollView>
+
+      {/* Freelancer Profile Modal */}
+      <Modal
+        visible={showProfileModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={closeProfileModal}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: darkMode ? '#1f2937' : '#ffffff' }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: darkMode ? '#ffffff' : '#111827' }]}>
+                Freelancer Profile
+              </Text>
+              <TouchableOpacity onPress={closeProfileModal} style={styles.closeButton}>
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={darkMode ? '#ffffff' : '#111827'}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {selectedFreelancer && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.profileHeader}>
+                  <View style={styles.profileAvatar}>
+                    <Ionicons
+                      name="person"
+                      size={48}
+                      color={darkMode ? '#06b6d4' : '#06b6d4'}
+                    />
+                  </View>
+                  <Text style={[styles.profileName, { color: darkMode ? '#ffffff' : '#111827' }]}>
+                    {selectedFreelancer.profile?.firstName || ''} {selectedFreelancer.profile?.lastName || ''}
+                  </Text>
+                  <Text style={[styles.profileEmail, { color: darkMode ? '#9ca3af' : '#6b7280' }]}>
+                    {selectedFreelancer.email}
+                  </Text>
+                </View>
+
+                {selectedFreelancer.profile?.bio && (
+                  <View style={styles.profileSection}>
+                    <Text style={[styles.sectionTitle, { color: darkMode ? '#ffffff' : '#111827' }]}>
+                      About
+                    </Text>
+                    <Text style={[styles.profileBio, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                      {selectedFreelancer.profile.bio}
+                    </Text>
+                  </View>
+                )}
+
+                {selectedFreelancer.profile?.skills && selectedFreelancer.profile.skills.length > 0 && (
+                  <View style={styles.profileSection}>
+                    <Text style={[styles.sectionTitle, { color: darkMode ? '#ffffff' : '#111827' }]}>
+                      Skills
+                    </Text>
+                    <View style={styles.skillsContainer}>
+                      {selectedFreelancer.profile.skills.map((skill, index) => (
+                        <View
+                          key={index}
+                          style={[styles.skillTag, { backgroundColor: darkMode ? '#374151' : '#e5e7eb' }]}
+                        >
+                          <Text style={[styles.skillText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                            {skill}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.profileSection}>
+                  <Text style={[styles.sectionTitle, { color: darkMode ? '#ffffff' : '#111827' }]}>
+                    Details
+                  </Text>
+                  <View style={styles.detailsGrid}>
+                    {selectedFreelancer.profile?.location && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="location"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.location}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.experienceLevel && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="briefcase"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.experienceLevel}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.yearsOfExperience && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="calendar"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.yearsOfExperience} years experience
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.availability && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="time"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.availability}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.workLocation && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="home"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.workLocation}
+                        </Text>
+                      </View>
+                    )}
+
+                    {selectedFreelancer.profile?.phone && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="call"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.phone}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.portfolioUrl && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="link"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          {selectedFreelancer.profile.portfolioUrl}
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.linkedinUrl && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="logo-linkedin"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          LinkedIn
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.githubUrl && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="logo-github"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          GitHub
+                        </Text>
+                      </View>
+                    )}
+                    {selectedFreelancer.profile?.cvUrl && (
+                      <View style={styles.detailItem}>
+                        <Ionicons
+                          name="document"
+                          size={16}
+                          color={darkMode ? '#06b6d4' : '#06b6d4'}
+                        />
+                        <Text style={[styles.detailText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                          CV Available
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalActionButton, { backgroundColor: darkMode ? '#374151' : '#e5e7eb' }]}
+                    onPress={closeProfileModal}
+                  >
+                    <Text style={[styles.modalActionText, { color: darkMode ? '#d1d5db' : '#4b5563' }]}>
+                      Close
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalActionButton, { backgroundColor: '#06b6d4' }]}
+                    onPress={() => {
+                      handleMessage(selectedFreelancer);
+                      closeProfileModal();
+                    }}
+                  >
+                    <Ionicons name="chatbubble" size={18} color="#ffffff" />
+                    <Text style={[styles.modalActionText, { color: '#ffffff', marginLeft: 8 }]}>
+                      Message
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };

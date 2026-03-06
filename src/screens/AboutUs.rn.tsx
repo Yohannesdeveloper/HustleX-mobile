@@ -1,8 +1,3 @@
-/**
- * React Native AboutUs Screen
- * Complete conversion maintaining exact UI/UX and functionality
- */
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -13,33 +8,31 @@ import {
   TouchableOpacity,
   Linking,
   Platform,
+  Dimensions,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppSelector } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
-import Animated, { 
-  FadeIn, 
-  FadeInDown, 
+import { RootStackParamList } from "../types";
+import Animated, {
+  FadeIn,
+  FadeInDown,
   FadeInUp,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import HomeNavbar from "../components/HomeNavbar.rn";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
 const AboutUs: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const t = useTranslation();
-  const [isLoaded, setIsLoaded] = useState(false);
-
-  useEffect(() => {
-    setIsLoaded(true);
-  }, []);
-
   const stats = [
     {
       number: "10K+",
@@ -70,26 +63,26 @@ const AboutUs: React.FC = () => {
   const values = [
     {
       icon: "bulb",
-      title: "Innovation",
-      description: "We continuously innovate to provide cutting-edge solutions for the freelance community.",
+      title: t.aboutUs?.innovation || "Innovation",
+      description: t.aboutUs?.innovationDesc || "We continuously innovate to provide cutting-edge solutions for the freelance community.",
       color: "#06b6d4",
     },
     {
       icon: "heart",
-      title: "Community",
-      description: "Building a supportive community where talent meets opportunity in Ethiopia and beyond.",
+      title: t.aboutUs?.community || "Community",
+      description: t.aboutUs?.communityDesc || "Building a supportive community where talent meets opportunity in Ethiopia and beyond.",
       color: "#ef4444",
     },
     {
       icon: "trophy",
-      title: "Excellence",
-      description: "Committed to delivering exceptional quality and fostering professional growth.",
+      title: t.aboutUs?.excellence || "Excellence",
+      description: t.aboutUs?.excellenceDesc || "Committed to delivering exceptional quality and fostering professional growth.",
       color: "#f59e0b",
     },
     {
       icon: "globe",
-      title: "Global Reach",
-      description: "Connecting Ethiopian talent with opportunities worldwide through our platform.",
+      title: t.aboutUs?.globalReach || "Global Reach",
+      description: t.aboutUs?.globalReachDesc || "Connecting Ethiopian talent with opportunities worldwide through our platform.",
       color: "#10b981",
     },
   ];
@@ -327,7 +320,7 @@ const AboutUs: React.FC = () => {
     valueCard: {
       flex: 1,
       minWidth: "45%",
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       padding: 20,
       alignItems: "center",
@@ -370,7 +363,7 @@ const AboutUs: React.FC = () => {
     teamCard: {
       flex: 1,
       minWidth: "45%",
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       padding: 20,
       alignItems: "center",
@@ -482,14 +475,153 @@ const AboutUs: React.FC = () => {
     ctaButtonTextSecondary: {
       color: "#06b6d4",
     },
+    titleSection: {
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
+      borderBottomWidth: 1,
+      borderBottomColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(6, 182, 212, 0.1)",
+      paddingVertical: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({
+        web: {
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+        },
+        default: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 2,
+          elevation: 2,
+        },
+      }),
+    },
+    titleText: {
+      fontSize: 28,
+      fontWeight: "800",
+      color: darkMode ? "#ffffff" : "#000000",
+      letterSpacing: -0.5,
+    },
+    backNavContainer: {
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
+    },
+    footer: {
+      paddingVertical: 40,
+      paddingHorizontal: 20,
+      backgroundColor: '#1f2937',
+    },
+    footerDark: {
+      backgroundColor: '#111827',
+    },
+    footerContent: {
+      maxWidth: 1200,
+      alignSelf: 'center',
+    },
+    footerGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginBottom: 32,
+      gap: 24,
+    },
+    footerColumn: {
+      flex: 1,
+      minWidth: 250,
+    },
+    footerColumnTitle: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#e5e7eb',
+      marginBottom: 16,
+    },
+    footerColumnTitleDark: {
+      color: '#f3f4f6',
+    },
+    footerLink: {
+      fontSize: 14,
+      color: '#9ca3af',
+      marginBottom: 12,
+    },
+    footerLinkDark: {
+      color: '#6b7280',
+    },
+    footerBottom: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingTop: 24,
+      borderTopWidth: 1,
+      borderTopColor: '#374151',
+    },
+    footerBottomLeft: {
+      flex: 1,
+      minWidth: 250,
+    },
+    footerCopyright: {
+      fontSize: 14,
+      color: '#9ca3af',
+      marginBottom: 8,
+    },
+    footerCopyrightDark: {
+      color: '#6b7280',
+    },
+    footerMadeWith: {
+      fontSize: 12,
+      color: '#6b7280',
+    },
+    footerMadeWithDark: {
+      color: '#4b5563',
+    },
+    footerSocial: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flexWrap: 'wrap',
+    },
+    footerFollowUs: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#9ca3af',
+    },
+    footerFollowUsDark: {
+      color: '#6b7280',
+    },
+    socialIcons: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    socialIcon: {
+      padding: 4,
+    },
   });
-
-  if (!isLoaded) {
-    return null;
-  }
 
   return (
     <View style={styles.container}>
+      <HomeNavbar />
+      {/* Back Navigation Bar */}
+      <View style={styles.backNavContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={styles.backText}>About Us</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Hero Section */}
         <Animated.View entering={FadeIn.duration(800)} style={styles.heroSection}>
@@ -527,9 +659,9 @@ const AboutUs: React.FC = () => {
         {/* Founder Section */}
         <Animated.View entering={FadeIn.duration(800).delay(400)} style={styles.founderSection}>
           <View style={{ alignItems: "center", marginBottom: 24 }}>
-            <Text style={styles.sectionTitle}>Meet Our Founder</Text>
+            <Text style={styles.sectionTitle}>{t.aboutUs?.meetOurFounder || "Meet Our Founder"}</Text>
             <Text style={[styles.heroDescription, { maxWidth: "90%" }]}>
-              The visionary behind HustleX, dedicated to empowering Ethiopia's digital workforce
+              {t.aboutUs?.visionarySubtitle || "The visionary behind HustleX, dedicated to empowering Ethiopia's digital workforce"}
             </Text>
           </View>
 
@@ -539,10 +671,10 @@ const AboutUs: React.FC = () => {
               style={styles.founderImage}
               resizeMode="cover"
             />
-            <Text style={styles.founderName}>Yohannes Fikre</Text>
-            <Text style={styles.founderRole}>Founder & CEO</Text>
+            <Text style={styles.founderName}>{t.aboutUs?.founderName || "Yohannes Fikre"}</Text>
+            <Text style={styles.founderRole}>{t.aboutUs?.founder || "Founder & CEO"}</Text>
             <Text style={styles.founderBio}>
-              Driven by a passion for connecting talent with opportunity, I created HustleX to empower freelancers and clients across Ethiopia and beyond. My goal is simple: make finding work and discovering talent seamless, fair, and inspiring. At HustleX, every connection is a step toward growth, creativity, and success.
+              {t.aboutUs?.founderBio || "Driven by a passion for connecting talent with opportunity, I created HustleX to empower freelancers and clients across Ethiopia and beyond. My goal is simple: make finding work and discovering talent seamless, fair, and inspiring. At HustleX, every connection is a step toward growth, creativity, and success."}
             </Text>
             <View style={styles.founderLinks}>
               <TouchableOpacity
@@ -559,12 +691,9 @@ const AboutUs: React.FC = () => {
         <Animated.View entering={FadeIn.duration(800).delay(600)} style={styles.storySection}>
           <View style={styles.storyGrid}>
             <View style={styles.storyText}>
-              <Text style={styles.storyTitle}>Our Story</Text>
+              <Text style={styles.storyTitle}>{t.aboutUs?.ourStory || "Our Story"}</Text>
               <Text style={styles.storyDescription}>
-                Founded in 2023, HustleX was born from a simple idea: Ethiopia's talented professionals deserve better access to global opportunities. Experiencing the challenges of the traditional job market firsthand, our founder set out to create a platform that would make freelance work accessible, fair, and rewarding.
-              </Text>
-              <Text style={styles.storyDescription}>
-                Though we are just getting started, HustleX is already building a community that connects skilled professionals with clients worldwide. Our mission goes beyond a marketplace—we're creating a movement that empowers Ethiopia's digital workforce to thrive in the global economy.
+                {t.aboutUs?.ourStoryDescription || "Founded in 2023, HustleX was born from a simple idea: Ethiopia's talented professionals deserve better access to global opportunities. Experiencing the challenges of the traditional job market firsthand, our founder set out to create a platform that would make freelance work accessible, fair, and rewarding. Though we are just getting started, HustleX is already building a community that connects skilled professionals with clients worldwide. Our mission goes beyond a marketplace—we're creating a movement that empowers Ethiopia's digital workforce to thrive in the global economy."}
               </Text>
             </View>
             <View style={styles.storyCard}>
@@ -634,23 +763,22 @@ const AboutUs: React.FC = () => {
 
         {/* CTA Section */}
         <Animated.View entering={FadeIn.duration(800).delay(1200)} style={styles.ctaSection}>
-          <Text style={styles.ctaTitle}>Join Our Growing Community</Text>
+          <Text style={styles.ctaTitle}>{t.cta?.title || "Join Our Growing Community"}</Text>
           <Text style={styles.ctaDescription}>
-            Whether you're a freelancer looking for opportunities or a business seeking talent,
-            HustleX is your gateway to success in the digital economy.
+            {t.cta?.subtitle || "Whether you're a freelancer looking for opportunities or a business seeking talent, HustleX is your gateway to success in the digital economy."}
           </Text>
           <View style={styles.ctaButtons}>
             <AnimatedTouchable
               style={[styles.ctaButton, styles.ctaButtonPrimary]}
               onPress={handleGetStarted}
             >
-              <Text style={styles.ctaButtonText}>Get Started Today</Text>
+              <Text style={styles.ctaButtonText}>{t.cta?.getStarted || "Get Started Today"}</Text>
             </AnimatedTouchable>
             <AnimatedTouchable
               style={[styles.ctaButton, styles.ctaButtonSecondary]}
               onPress={handleCommunity}
             >
-              <Text style={[styles.ctaButtonText, styles.ctaButtonTextSecondary]}>Community</Text>
+              <Text style={[styles.ctaButtonText, styles.ctaButtonTextSecondary]}>{t.cta?.learnMore || "Community"}</Text>
             </AnimatedTouchable>
           </View>
         </Animated.View>

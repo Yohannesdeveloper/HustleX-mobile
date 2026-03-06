@@ -48,7 +48,7 @@ class ApiService {
         const apiUrl = this.getApiUrl();
         const url = `${apiUrl}${endpoint}`;
 
-        const headers: HeadersInit = {
+        const headers: any = {
           'Content-Type': 'application/json',
           ...options.headers,
         };
@@ -79,7 +79,7 @@ class ApiService {
             } catch (parseError) {
               errorData = { message: `HTTP error! status: ${response.status}` };
             }
-            
+
             const error = new Error(errorData.message || `HTTP error! status: ${response.status}`);
             (error as any).status = response.status;
             (error as any).isNotFound = response.status === 404;
@@ -90,16 +90,19 @@ class ApiService {
           return await response.json();
         } catch (error: any) {
           // Log connection errors
-          if (error?.message?.includes('Failed to fetch') || 
-              error?.message?.includes('Network Error') ||
-              error?.code === 'ERR_NETWORK') {
+          if (error?.message?.includes('Failed to fetch') ||
+            error?.message?.includes('Network Error') ||
+            error?.code === 'ERR_NETWORK') {
             console.error(`❌ Cannot connect to backend at ${url}`);
             console.error(`   Make sure the backend server is running on port 5001 (or check port.json)`);
           } else if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
             const isCompanyProfile404 = endpoint === '/companies/profile' && error?.status === 404;
             const isMessages404 = endpoint === '/messages' && (error?.status === 404 || error?.message?.includes('Route not found'));
             if (!isCompanyProfile404 && !isMessages404) {
-              console.error(`API Error (${endpoint}):`, error);
+              console.error(`❌ API Error (${endpoint}):`, error.message);
+              if (error.errorData) {
+                console.error(`📦 Error Details:`, JSON.stringify(error.errorData, null, 2));
+              }
             }
           }
           throw error;
@@ -168,6 +171,14 @@ class ApiService {
     });
   }
 
+  async updateMyProfile(profileData: any): Promise<any> {
+    const response = await this.request<{ user: any }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify({ profile: profileData }),
+    });
+    return response.user;
+  }
+
   isAuthenticated(): boolean {
     // Check if token exists in AsyncStorage synchronously
     // Note: This is a best-effort check. For accurate check, use getAuthToken()
@@ -181,7 +192,7 @@ class ApiService {
   }
 
   logout(): void {
-    AsyncStorage.removeItem('authToken').catch(() => {});
+    AsyncStorage.removeItem('authToken').catch(() => { });
   }
 
   // Password Reset API
@@ -233,9 +244,9 @@ class ApiService {
       const apiUrl = this.getApiUrl();
       const baseUrl = this.getBaseUrl();
       const url = `${apiUrl}/auth/check-user?email=${encodeURIComponent(email)}`;
-      
+
       console.log(`[checkUser] Checking user at: ${url}`);
-      
+
       // Skip health check if we're rate-limited (health check also hits rate limits)
       // Only do health check if we haven't been rate-limited recently
       if (this.checkUserRetryDelay <= 2000) {
@@ -259,26 +270,26 @@ class ApiService {
           // Continue anyway - might be a CORS issue with health endpoint
         }
       }
-      
+
       // Use the same pattern as request method but handle 404s gracefully
       const token = await this.getAuthToken();
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
-      
+
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
+
       console.log(`[checkUser] Making request with headers:`, Object.keys(headers));
-      
+
       const response = await fetch(url, {
         method: 'GET',
         headers,
       });
-      
+
       console.log(`[checkUser] Response status: ${response.status}`);
-      
+
       // 404 means user doesn't exist - this is expected for new signups
       if (response.status === 404) {
         console.log('[checkUser] User not found (404) - this is normal for new users');
@@ -289,7 +300,7 @@ class ApiService {
         this.checkUserRetryDelay = 2000;
         return result;
       }
-      
+
       // 429 means rate limited - use exponential backoff
       if (response.status === 429) {
         // Exponential backoff: double the delay, max 30 seconds
@@ -301,7 +312,7 @@ class ApiService {
         }
         return null;
       }
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('[checkUser] User found:', data.user?.email);
@@ -311,7 +322,7 @@ class ApiService {
         this.checkUserRetryDelay = 2000;
         return data;
       }
-      
+
       // Other error statuses - try to get error message
       try {
         const errorData = await response.json();
@@ -320,7 +331,7 @@ class ApiService {
         const errorText = await response.text().catch(() => 'Could not read response');
         console.warn(`[checkUser] Unexpected status ${response.status}, response: ${errorText}`);
       }
-      
+
       // Cache null result for errors (but shorter cache duration)
       this.checkUserCache.set(email.toLowerCase(), { result: null, timestamp: Date.now() });
       return null;
@@ -329,18 +340,18 @@ class ApiService {
       // Just return null to allow signup to proceed
       const errorMsg = error?.message || String(error);
       console.warn(`[checkUser] Error: ${errorMsg}`);
-      
+
       // Log full error details for debugging
       if (error?.name) console.warn(`[checkUser] Error name: ${error.name}`);
       if (error?.code) console.warn(`[checkUser] Error code: ${error.code}`);
       if (error?.stack) console.warn(`[checkUser] Stack: ${error.stack.substring(0, 200)}`);
-      
+
       // Check if it's a network/connection error
-      if (errorMsg.includes('Failed to fetch') || 
-          errorMsg.includes('Network Error') ||
-          errorMsg.includes('Network request failed') ||
-          error?.code === 'ERR_NETWORK' ||
-          error?.name === 'TypeError') {
+      if (errorMsg.includes('Failed to fetch') ||
+        errorMsg.includes('Network Error') ||
+        errorMsg.includes('Network request failed') ||
+        error?.code === 'ERR_NETWORK' ||
+        error?.name === 'TypeError') {
         console.warn('[checkUser] Backend appears unreachable - allowing signup to proceed');
         console.warn('[checkUser] This may be due to:');
         console.warn('  - Backend server not running');
@@ -348,7 +359,7 @@ class ApiService {
         console.warn('  - Network connectivity problem');
         console.warn('  - MongoDB connection issue (backend running but DB unreachable)');
       }
-      
+
       // Return cached result if available on error
       const cached = this.checkUserCache.get(email.toLowerCase());
       if (cached) {
@@ -369,7 +380,7 @@ class ApiService {
     sortBy?: string;
   }): Promise<{ jobs: any[]; pagination: { current: number; pages: number; total: number } }> {
     const queryParams = new URLSearchParams();
-    
+
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.category) queryParams.append('category', params.category);
@@ -380,7 +391,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = `/jobs${queryString ? `?${queryString}` : ''}`;
-    
+
     return this.request(endpoint);
   }
 
@@ -436,8 +447,30 @@ class ApiService {
   }
 
   async clearAllJobs(): Promise<void> {
-    return this.request('/jobs/clear-all', {
+    return this.request('/jobs/user/clear-all', {
       method: 'DELETE',
+    });
+  }
+
+  // Job Moderation API (Admin)
+  async fetchPendingJobs(): Promise<any> {
+    return this.request('/jobs/pending/list', {
+      headers: { 'x-admin-code': 'JobModeration' }
+    });
+  }
+
+  async approveJob(jobId: string): Promise<any> {
+    return this.request(`/jobs/${jobId}/approve`, {
+      method: 'PUT',
+      headers: { 'x-admin-code': 'JobModeration' }
+    });
+  }
+
+  async declineJob(jobId: string, reason?: string): Promise<any> {
+    return this.request(`/jobs/${jobId}/decline`, {
+      method: 'PUT',
+      headers: { 'x-admin-code': 'JobModeration' },
+      body: JSON.stringify({ reason })
     });
   }
 
@@ -470,18 +503,68 @@ class ApiService {
     });
   }
 
+  async getMyJobsApplications(): Promise<any[]> {
+    return this.request('/applications/my-jobs-applications');
+  }
+
+  async sendNotificationEmail(data: { to: string; subject: string; body: string }): Promise<any> {
+    return this.request('/notifications/email', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // Payment API
+  async sendPaymentRequest(phoneNumber: string, planId: string, amount: number, currency: string): Promise<any> {
+    return this.request('/pricing/send-payment-request', {
+      method: 'POST',
+      body: JSON.stringify({ phoneNumber, planId, amount, currency }),
+    });
+  }
+
+  async subscribeToPlan(planId: string, paymentMethod: string): Promise<any> {
+    return this.request('/pricing/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ planId, paymentMethod }),
+    });
+  }
+
+  // Admin Subscription API
+  async fetchPendingSubscriptions(): Promise<any> {
+    return this.request('/pricing/admin/pending-subscriptions', {
+      headers: { 'x-admin-code': 'JobModeration' }
+    });
+  }
+
+  async approveSubscription(userId: string): Promise<any> {
+    return this.request(`/pricing/admin/approve/${userId}`, {
+      method: 'POST',
+      headers: { 'x-admin-code': 'JobModeration' }
+    });
+  }
+
+  async rejectSubscription(userId: string): Promise<any> {
+    return this.request(`/pricing/admin/reject/${userId}`, {
+      method: 'POST',
+      headers: { 'x-admin-code': 'JobModeration' }
+    });
+  }
+
   // File uploads
   async uploadCV(file: any): Promise<{ fileUrl: string }> {
     const token = await this.getAuthToken();
     const apiUrl = this.getApiUrl();
     const formData = new FormData();
-    
+
     const fileUri = file.uri;
-    
+
     if (!fileUri) {
       throw new Error('No file URI provided');
     }
-    
+
+    // Generate a filename if not provided
+    let fileName = file.fileName || file.name || '';
+
     // Determine file type - DocumentPicker might not always provide mimeType
     let fileType = file.mimeType || file.type;
     if (!fileType) {
@@ -496,20 +579,18 @@ class ApiService {
         fileType = 'application/pdf'; // Default
       }
     }
-    
-    // Generate a filename if not provided
-    let fileName = file.fileName || file.name;
+
     if (!fileName) {
-      const extension = fileType.includes('pdf') ? 'pdf' : 
-                       fileType.includes('docx') ? 'docx' : 'doc';
+      const extension = fileType.includes('pdf') ? 'pdf' :
+        fileType.includes('docx') ? 'docx' : 'doc';
       fileName = `cv_${Date.now()}.${extension}`;
     }
-    
+
     // Check if this is a blob URL (web platform)
     const isBlobUrl = fileUri.startsWith('blob:');
-    
+
     let fileToUpload: any;
-    
+
     if (isBlobUrl) {
       // For web blob URLs, we need to convert to a File object
       try {
@@ -535,7 +616,7 @@ class ApiService {
         name: fileName,
       };
     }
-    
+
     // Log the file object structure for debugging
     console.log(`[uploadCV] File object:`, {
       uri: fileUri,
@@ -548,9 +629,9 @@ class ApiService {
       hasName: !!file.name,
       allKeys: Object.keys(file),
     });
-    
+
     console.log(`[uploadCV] FormData file object:`, fileToUpload);
-    
+
     // Append to FormData
     formData.append('cv', fileToUpload as any);
 
@@ -593,8 +674,8 @@ class ApiService {
       return result;
     } catch (error: any) {
       // Provide more detailed error information
-      if (error?.message?.includes('Network request failed') || 
-          error?.message?.includes('Failed to fetch')) {
+      if (error?.message?.includes('Network request failed') ||
+        error?.message?.includes('Failed to fetch')) {
         console.error(`❌ Network error uploading CV to ${apiUrl}/upload/cv`);
         console.error(`   Check if backend is running and accessible`);
         throw new Error('Network error: Could not connect to server. Please check your connection.');
@@ -607,16 +688,16 @@ class ApiService {
     const token = await this.getAuthToken();
     const apiUrl = this.getApiUrl();
     const formData = new FormData();
-    
+
     // Handle expo-image-picker asset structure
     // Asset from ImagePicker has: uri, mimeType, fileName, width, height, fileSize
     // The uri might be file://, content://, blob://, or http://
     const fileUri = file.uri;
-    
+
     if (!fileUri) {
       throw new Error('No file URI provided');
     }
-    
+
     // Determine file type - ImagePicker might not always provide mimeType
     // Try to infer from URI extension or use default
     let fileType = file.mimeType || file.type;
@@ -632,19 +713,19 @@ class ApiService {
         fileType = 'image/jpeg'; // Default
       }
     }
-    
+
     // Generate a filename if not provided
     let fileName = file.fileName || file.name;
     if (!fileName) {
       const extension = fileType.split('/')[1] || 'jpg';
       fileName = `avatar_${Date.now()}.${extension}`;
     }
-    
+
     // Check if this is a blob URL (web platform)
     const isBlobUrl = fileUri.startsWith('blob:');
-    
+
     let fileToUpload: any;
-    
+
     if (isBlobUrl) {
       // For web blob URLs, we need to convert to a File object
       try {
@@ -670,7 +751,7 @@ class ApiService {
         name: fileName,
       };
     }
-    
+
     // Log the file object structure for debugging
     console.log(`[uploadAvatar] File object:`, {
       uri: fileUri,
@@ -683,9 +764,9 @@ class ApiService {
       hasName: !!file.name,
       allKeys: Object.keys(file),
     });
-    
+
     console.log(`[uploadAvatar] FormData file object:`, fileToUpload);
-    
+
     // Append to FormData
     formData.append('avatar', fileToUpload as any);
 
@@ -730,14 +811,96 @@ class ApiService {
       return result;
     } catch (error: any) {
       // Provide more detailed error information
-      if (error?.message?.includes('Network request failed') || 
-          error?.message?.includes('Failed to fetch')) {
+      if (error?.message?.includes('Network request failed') ||
+        error?.message?.includes('Failed to fetch')) {
         console.error(`❌ Network error uploading avatar to ${apiUrl}/upload/avatar`);
         console.error(`   Check if backend is running and accessible`);
         throw new Error('Network error: Could not connect to server. Please check your connection.');
       }
       throw error;
     }
+  }
+
+  async uploadLogo(file: any): Promise<{ fileUrl: string }> {
+    const token = await this.getAuthToken();
+    const apiUrl = this.getApiUrl();
+    const formData = new FormData();
+    const fileUri = file.uri;
+
+    if (!fileUri) throw new Error('No file URI provided');
+
+    let fileName = file.fileName || file.name || `logo_${Date.now()}.jpg`;
+    let fileType = file.mimeType || file.type || 'image/jpeg';
+
+    const isBlobUrl = fileUri.startsWith('blob:');
+    let fileToUpload: any;
+
+    if (isBlobUrl) {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+      fileToUpload = new File([blob], fileName, { type: fileType });
+    } else {
+      fileToUpload = { uri: fileUri, type: fileType, name: fileName };
+    }
+
+    formData.append('logo', fileToUpload as any);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${apiUrl}/upload/logo`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Logo upload failed');
+    }
+
+    return await response.json();
+  }
+
+  async uploadTradeLicense(file: any): Promise<{ fileUrl: string }> {
+    const token = await this.getAuthToken();
+    const apiUrl = this.getApiUrl();
+    const formData = new FormData();
+    const fileUri = file.uri;
+
+    if (!fileUri) throw new Error('No file URI provided');
+
+    let fileName = file.fileName || file.name || `license_${Date.now()}.pdf`;
+    let fileType = file.mimeType || file.type || 'application/pdf';
+
+    const isBlobUrl = fileUri.startsWith('blob:');
+    let fileToUpload: any;
+
+    if (isBlobUrl) {
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+      fileToUpload = new File([blob], fileName, { type: fileType });
+    } else {
+      fileToUpload = { uri: fileUri, type: fileType, name: fileName };
+    }
+
+    formData.append('tradeLicense', fileToUpload as any);
+
+    const headers: HeadersInit = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(`${apiUrl}/upload/trade-license`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText || 'Trade license upload failed');
+    }
+
+    return await response.json();
   }
 
   getFileUrl(filePath: string): string {
@@ -809,7 +972,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = `/users/freelancers${queryString ? `?${queryString}` : ''}`;
-    
+
     return this.request(endpoint);
   }
 
@@ -828,7 +991,7 @@ class ApiService {
 
     const queryString = queryParams.toString();
     const endpoint = `/blogs${queryString ? `?${queryString}` : ''}`;
-    
+
     return this.request(endpoint);
   }
 
@@ -856,6 +1019,12 @@ class ApiService {
     });
   }
 
+  async fetchAdminBlogs(): Promise<{ blogs: any[] }> {
+    return this.request('/blogs/admin/list', {
+      headers: { 'x-admin-code': 'BlogPost' }
+    });
+  }
+
   async likeBlog(blogId: string): Promise<{ likes: number }> {
     return this.request(`/blogs/${blogId}/like`, {
       method: 'POST',
@@ -872,13 +1041,13 @@ class ApiService {
     const token = await this.getAuthToken();
     const apiUrl = this.getApiUrl();
     const formData = new FormData();
-    
+
     const fileUri = file.uri;
-    
+
     if (!fileUri) {
       throw new Error('No file URI provided');
     }
-    
+
     // Determine file type
     let fileType = file.mimeType || file.type;
     if (!fileType) {
@@ -892,19 +1061,19 @@ class ApiService {
         fileType = 'image/jpeg'; // Default
       }
     }
-    
+
     // Generate a filename if not provided
     let fileName = file.fileName || file.name;
     if (!fileName) {
       const extension = fileType.split('/')[1] || 'jpg';
       fileName = `blog_${Date.now()}.${extension}`;
     }
-    
+
     // Check if this is a blob URL (web platform)
     const isBlobUrl = fileUri.startsWith('blob:');
-    
+
     let fileToUpload: any;
-    
+
     if (isBlobUrl) {
       try {
         const response = await fetch(fileUri);
@@ -921,8 +1090,8 @@ class ApiService {
         name: fileName,
       };
     }
-    
-    formData.append('image', fileToUpload as any);
+
+    formData.append('blogImage', fileToUpload as any);
 
     const headers: HeadersInit = {};
     if (token) {
@@ -952,8 +1121,8 @@ class ApiService {
       const result = await response.json();
       return result;
     } catch (error: any) {
-      if (error?.message?.includes('Network request failed') || 
-          error?.message?.includes('Failed to fetch')) {
+      if (error?.message?.includes('Network request failed') ||
+        error?.message?.includes('Failed to fetch')) {
         console.error(`❌ Network error uploading blog image to ${apiUrl}/upload/blog-image`);
         throw new Error('Network error: Could not connect to server. Please check your connection.');
       }

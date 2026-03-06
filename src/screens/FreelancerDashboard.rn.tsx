@@ -15,6 +15,7 @@ import {
   StatusBar,
   BackHandler,
 } from "react-native";
+import PagerView from "react-native-pager-view";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../store/hooks";
@@ -55,6 +56,26 @@ const FreelancerDashboard: React.FC = () => {
   const routeParams = (route.params as any) || {};
   const initialTab = routeParams.tab || "overview";
   const [activeTab, setActiveTab] = useState<TabType>(initialTab as TabType);
+  const pagerRef = React.useRef<PagerView>(null);
+
+  const handleTabPress = (tabId: TabType, index: number) => {
+    setActiveTab(tabId);
+    pagerRef.current?.setPage(index);
+
+    if (tabId === "messages") {
+      (navigation as any).navigate("FreelancerMessages");
+    } else if (tabId === "profile") {
+      // Profile is now a tab, no navigation needed unless explicitly wanted
+    }
+  };
+
+  const handlePageSelected = (e: any) => {
+    const index = e.nativeEvent.position;
+    const tabIds: TabType[] = ["overview", "myApplications", "myJobs", "messages", "profile"];
+    if (tabIds[index]) {
+      setActiveTab(tabIds[index]);
+    }
+  };
 
   // Analytics state
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
@@ -180,19 +201,18 @@ const FreelancerDashboard: React.FC = () => {
         inReviewCount: inReviewApps.length,
         successRate,
       }));
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
     } finally {
       setAnalyticsLoading(false);
     }
   };
+
+
 
   const tabs = [
     { id: "overview" as TabType, label: "Overview", icon: "stats-chart" },
     { id: "myApplications" as TabType, label: "My Applications", icon: "people" },
     { id: "myJobs" as TabType, label: "Browse Jobs", icon: "briefcase" },
     { id: "messages" as TabType, label: "Messages", icon: "chatbubbles" },
-    { id: "analytics" as TabType, label: "Analytics", icon: "bar-chart" },
     { id: "profile" as TabType, label: "Profile", icon: "person" },
   ];
 
@@ -278,31 +298,83 @@ const FreelancerDashboard: React.FC = () => {
                   <Ionicons name="person-circle" size={24} color="#06b6d4" />
                   <Text style={styles.infoCardTitle}>Profile Status</Text>
                 </View>
-                {profile ? (
-                  <>
-                    <View style={styles.progressBarContainer}>
-                      <View style={styles.progressBar}>
-                        <View style={[styles.progressBarFill, { width: "85%" }]} />
+                {(() => {
+                  const calculateCompletion = () => {
+                    if (!profile) return { percentage: 0, status: "Incomplete" };
+
+                    const step1Fields = ['firstName', 'lastName', 'email', 'location'];
+                    const step2Fields = [
+                      'bio',
+                      'education',
+                      'workExperience',
+                      'experienceLevel',
+                      'yearsOfExperience'
+                    ];
+
+                    let completed = 0;
+                    const total = step1Fields.length + step2Fields.length + 2; // +2 for skills and cv
+
+                    step1Fields.forEach(f => {
+                      if (profile[f]) completed++;
+                    });
+
+                    step2Fields.forEach(f => {
+                      if (profile[f]) completed++;
+                    });
+
+                    if (profile.skills && profile.skills.length > 0) completed++;
+                    if (profile.cvUrl) completed++;
+
+                    const percentage = Math.round((completed / total) * 100);
+
+                    let status = "Getting Started";
+                    if (percentage >= 100) status = "Completed";
+                    else if (percentage >= 80) status = "Almost Done";
+                    else if (percentage >= 50) status = "Halfway There";
+
+                    return { percentage, status };
+                  };
+
+                  const { percentage, status } = calculateCompletion();
+                  const isProfileCreated = !!profile;
+
+                  return isProfileCreated ? (
+                    <>
+                      <View style={styles.progressBarContainer}>
+                        <View style={styles.progressBar}>
+                          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+                        </View>
+                        <Text style={styles.progressText}>{percentage}% Complete</Text>
                       </View>
-                      <Text style={styles.progressText}>85% Complete</Text>
-                    </View>
-                    <Text style={styles.infoCardText}>
-                      Your profile looks great! Keep it updated to attract more clients.
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <Text style={styles.infoCardText}>
-                      Complete your profile to increase your chances of getting hired.
-                    </Text>
-                    <TouchableOpacity
-                      style={styles.infoCardButton}
-                      onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
-                    >
-                      <Text style={styles.infoCardButtonText}>Complete Profile</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+                      <Text style={styles.infoCardText}>
+                        Status: <Text style={{ fontWeight: 'bold' }}>{status}</Text>.
+                        {percentage < 100
+                          ? " Complete your profile to increase visibility."
+                          : " Your profile is looking great!"}
+                      </Text>
+                      {percentage < 100 && (
+                        <TouchableOpacity
+                          style={styles.infoCardButton}
+                          onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                        >
+                          <Text style={styles.infoCardButtonText}>Finish Profile</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.infoCardText}>
+                        Complete your profile to increase your chances of getting hired.
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.infoCardButton}
+                        onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                      >
+                        <Text style={styles.infoCardButtonText}>Complete Profile</Text>
+                      </TouchableOpacity>
+                    </>
+                  );
+                })()}
               </View>
             </View>
 
@@ -364,14 +436,14 @@ const FreelancerDashboard: React.FC = () => {
                       <View style={[
                         styles.statusBadge,
                         app.status === "hired" ? styles.statusHired :
-                        app.status === "rejected" ? styles.statusRejected :
-                        app.status === "in_review" ? styles.statusInReview :
-                        styles.statusPending
+                          app.status === "rejected" ? styles.statusRejected :
+                            app.status === "in_review" ? styles.statusInReview :
+                              styles.statusPending
                       ]}>
                         <Text style={styles.statusText}>
                           {app.status === "in_review" ? "In Review" :
-                           app.status === "pending" ? "Pending" :
-                           app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : "Pending"}
+                            app.status === "pending" ? "Pending" :
+                              app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : "Pending"}
                         </Text>
                       </View>
                     </View>
@@ -484,45 +556,6 @@ const FreelancerDashboard: React.FC = () => {
           </ScrollView>
         );
 
-      case "analytics":
-        return (
-          <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Analytics</Text>
-              <Text style={styles.sectionSubtitle}>
-                Track your performance and success metrics
-              </Text>
-            </View>
-
-            {analyticsLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#06b6d4" />
-                <Text style={styles.loadingText}>Loading analytics...</Text>
-              </View>
-            ) : (
-              <>
-                <View style={styles.metricsGrid}>
-                  <View style={styles.analyticsCard}>
-                    <Text style={styles.analyticsCardTitle}>Response Time</Text>
-                    <Text style={styles.analyticsCardValue}>{analyticsData.responseTime}h</Text>
-                    <Text style={styles.analyticsCardLabel}>Average response time</Text>
-                  </View>
-                  <View style={styles.analyticsCard}>
-                    <Text style={styles.analyticsCardTitle}>Success Rate</Text>
-                    <Text style={styles.analyticsCardValue}>{analyticsData.successRate}%</Text>
-                    <Text style={styles.analyticsCardLabel}>Application to hire rate</Text>
-                  </View>
-                  <View style={styles.analyticsCard}>
-                    <Text style={styles.analyticsCardTitle}>Jobs Applied</Text>
-                    <Text style={styles.analyticsCardValue}>{analyticsData.totalApplications}</Text>
-                    <Text style={styles.analyticsCardLabel}>Total applications submitted</Text>
-                  </View>
-                </View>
-              </>
-            )}
-          </ScrollView>
-        );
-
       case "profile":
         return (
           <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
@@ -597,11 +630,7 @@ const FreelancerDashboard: React.FC = () => {
   };
 
   const handleBackPress = useCallback(() => {
-    if (navigation.canGoBack()) {
-      navigation.goBack();
-      return true;
-    }
-    (navigation as any).navigate("HomeFinal");
+    (navigation as any).navigate("MainSwipeableTabs");
     return true;
   }, [navigation]);
 
@@ -616,7 +645,7 @@ const FreelancerDashboard: React.FC = () => {
   useEffect(() => {
     if (Platform.OS === "web" && typeof document !== "undefined") {
       const bgColor = darkMode ? "#000000" : "#ffffff";
-      
+
       // Set background on html, body, and root elements immediately
       document.documentElement.style.backgroundColor = bgColor;
       document.documentElement.style.margin = "0";
@@ -624,14 +653,14 @@ const FreelancerDashboard: React.FC = () => {
       document.documentElement.style.marginTop = "0";
       document.documentElement.style.paddingTop = "0";
       document.documentElement.style.top = "0";
-      
+
       document.body.style.backgroundColor = bgColor;
       document.body.style.margin = "0";
       document.body.style.padding = "0";
       document.body.style.marginTop = "0";
       document.body.style.paddingTop = "0";
       document.body.style.top = "0";
-      
+
       const rootEl = document.getElementById("root") || document.getElementById("app");
       if (rootEl) {
         const root = rootEl as HTMLElement;
@@ -641,7 +670,7 @@ const FreelancerDashboard: React.FC = () => {
         root.style.marginTop = "0";
         root.style.paddingTop = "0";
         root.style.top = "0";
-        
+
         // Also style first child if it exists
         const firstChild = root.firstElementChild as HTMLElement | null;
         if (firstChild) {
@@ -652,7 +681,7 @@ const FreelancerDashboard: React.FC = () => {
           firstChild.style.top = "0";
           firstChild.style.backgroundColor = bgColor;
         }
-        
+
         // Force remove any white space from all direct children
         Array.from(root.children).forEach((child) => {
           const el = child as HTMLElement;
@@ -664,7 +693,7 @@ const FreelancerDashboard: React.FC = () => {
           }
         });
       }
-      
+
       // Inject global styles to remove any white strip
       let styleTag = document.getElementById("freelancer-dashboard-style-override");
       if (!styleTag) {
@@ -725,7 +754,7 @@ const FreelancerDashboard: React.FC = () => {
       ...(Platform.OS === "web" && { marginTop: 0 as number, paddingTop: 0 as number }),
     },
     header: {
-      backgroundColor: darkMode ? "#111827" : "#ffffff",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       paddingTop: Platform.OS === "web"
         ? 0 as number
         : (Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 0),
@@ -737,10 +766,8 @@ const FreelancerDashboard: React.FC = () => {
     headerRow: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: Platform.OS === "web" ? 0 : 8,
-      paddingBottom: Platform.OS === "web" ? 0 : 10,
-      paddingTop: Platform.OS === "web" ? 0 : undefined,
-      ...(Platform.OS === "web" && { height: 0, marginTop: 0, marginBottom: 0, overflow: 'hidden' }),
+      paddingHorizontal: 8,
+      paddingVertical: 8,
     },
     headerBackButton: {
       padding: Platform.OS === "web" ? 0 : 4,
@@ -751,10 +778,10 @@ const FreelancerDashboard: React.FC = () => {
       color: darkMode ? "#ffffff" : "#111827",
       marginLeft: 12,
     },
+
     tabsContainer: {
-      borderTopWidth: 1,
-      borderTopColor: darkMode ? "#374151" : "#e5e7eb",
-      ...(Platform.OS === "web" && { marginTop: 0, paddingTop: 0 }),
+      flexGrow: 0,
+      marginLeft: 8,
     },
     tabsScrollView: {
       flexDirection: "row",
@@ -820,7 +847,7 @@ const FreelancerDashboard: React.FC = () => {
     },
     metricCard: {
       width: "48%",
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -852,7 +879,7 @@ const FreelancerDashboard: React.FC = () => {
     },
     statusSummaryCard: {
       width: "48%",
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -870,7 +897,7 @@ const FreelancerDashboard: React.FC = () => {
       color: darkMode ? "#9ca3af" : "#6b7280",
     },
     infoCard: {
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
     },
@@ -926,7 +953,7 @@ const FreelancerDashboard: React.FC = () => {
     },
     tipCard: {
       flexDirection: "row",
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
     },
@@ -957,7 +984,7 @@ const FreelancerDashboard: React.FC = () => {
       color: darkMode ? "#9ca3af" : "#6b7280",
     },
     applicationCard: {
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -1029,7 +1056,7 @@ const FreelancerDashboard: React.FC = () => {
       fontWeight: "600",
     },
     jobCard: {
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -1099,7 +1126,7 @@ const FreelancerDashboard: React.FC = () => {
     },
     analyticsCard: {
       width: "48%",
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 16,
       marginBottom: 12,
@@ -1120,7 +1147,7 @@ const FreelancerDashboard: React.FC = () => {
       color: darkMode ? "#9ca3af" : "#6b7280",
     },
     profileCard: {
-      backgroundColor: darkMode ? "#111827" : "#f9fafb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
       borderRadius: 12,
       padding: 24,
     },
@@ -1175,63 +1202,486 @@ const FreelancerDashboard: React.FC = () => {
       fontSize: 16,
       fontWeight: "600",
     },
+    pagerView: {
+      flex: 1,
+    }
   });
 
   return (
-    <View style={[styles.container, Platform.OS === 'web' && { marginTop: 0, paddingTop: 0 }]}>
+    <View style={styles.container}>
       {Platform.OS !== 'web' && (
         <StatusBar
           barStyle={darkMode ? "light-content" : "dark-content"}
           backgroundColor={darkMode ? "#000000" : "#ffffff"}
         />
       )}
-      {/* Header Container */}
-      <View style={[styles.header, Platform.OS === 'web' && { marginTop: 0, paddingTop: 0, paddingBottom: 0, height: 'auto', minHeight: 0 }]}>
-        {Platform.OS !== 'web' && (
-          <>
-            <View style={styles.headerRow}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <TouchableOpacity
+            style={styles.headerBackButton}
+            onPress={handleBackPress}
+          >
+            <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#111827"} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Freelancer Dashboard</Text>
+          <View style={{ flex: 1 }} />
+
+        </View>
+
+        {/* Tabs */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.tabsContainer}
+          contentContainerStyle={styles.tabsScrollView}
+        >
+          {tabs.map((tab, index) => (
+            <TouchableOpacity
+              key={tab.id}
+              style={[styles.tab, activeTab === tab.id && styles.tabActive]}
+              onPress={() => handleTabPress(tab.id, index)}
+            >
+              <Ionicons
+                name={tab.icon as any}
+                size={20}
+                color={activeTab === tab.id
+                  ? (darkMode ? "#ffffff" : "#000000")
+                  : (darkMode ? "#9ca3af" : "#6b7280")}
+              />
+              <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <PagerView
+        ref={pagerRef}
+        style={styles.pagerView}
+        initialPage={tabs.findIndex(t => t.id === initialTab)}
+        onPageSelected={handlePageSelected}
+      >
+        <View key="overview" style={{ flex: 1 }}>
+          <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>
+                Welcome, {user?.profile?.firstName || user?.email || "Freelancer"}!
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                Your freelance journey starts here. Track your applications, jobs, and performance all in one place.
+              </Text>
+            </View>
+
+            {/* Analytics Cards */}
+            <View style={styles.metricsGrid}>
+              <View style={styles.metricCard}>
+                <View style={[styles.metricIcon, { backgroundColor: "#06b6d4" }]}>
+                  <Ionicons name="people" size={24} color="#ffffff" />
+                </View>
+                <Text style={styles.metricValue}>{analyticsData.totalApplications}</Text>
+                <Text style={styles.metricLabel}>Applications</Text>
+              </View>
+              <View style={styles.metricCard}>
+                <View style={[styles.metricIcon, { backgroundColor: "#22c55e" }]}>
+                  <Ionicons name="briefcase" size={24} color="#ffffff" />
+                </View>
+                <Text style={styles.metricValue}>{analyticsData.totalJobs}</Text>
+                <Text style={styles.metricLabel}>Jobs Available</Text>
+              </View>
+              <View style={styles.metricCard}>
+                <View style={[styles.metricIcon, { backgroundColor: "#a855f7" }]}>
+                  <Ionicons name="checkmark-circle" size={24} color="#ffffff" />
+                </View>
+                <Text style={styles.metricValue}>{analyticsData.hiredCount}</Text>
+                <Text style={styles.metricLabel}>Jobs Won</Text>
+              </View>
+              <View style={styles.metricCard}>
+                <View style={[styles.metricIcon, { backgroundColor: "#f59e0b" }]}>
+                  <Ionicons name="stats-chart" size={24} color="#ffffff" />
+                </View>
+                <Text style={styles.metricValue}>{analyticsData.successRate}%</Text>
+                <Text style={styles.metricLabel}>Success Rate</Text>
+              </View>
+            </View>
+
+            {/* Application Status Summary */}
+            {analyticsData.totalApplications > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Application Status</Text>
+                <View style={styles.statusSummaryGrid}>
+                  <View style={styles.statusSummaryCard}>
+                    <Ionicons name="hourglass" size={20} color="#f59e0b" />
+                    <Text style={styles.statusSummaryValue}>{analyticsData.pendingCount}</Text>
+                    <Text style={styles.statusSummaryLabel}>Pending</Text>
+                  </View>
+                  <View style={styles.statusSummaryCard}>
+                    <Ionicons name="eye" size={20} color="#3b82f6" />
+                    <Text style={styles.statusSummaryValue}>{analyticsData.inReviewCount}</Text>
+                    <Text style={styles.statusSummaryLabel}>In Review</Text>
+                  </View>
+                  <View style={styles.statusSummaryCard}>
+                    <Ionicons name="checkmark-circle" size={20} color="#22c55e" />
+                    <Text style={styles.statusSummaryValue}>{analyticsData.hiredCount}</Text>
+                    <Text style={styles.statusSummaryLabel}>Hired</Text>
+                  </View>
+                  <View style={styles.statusSummaryCard}>
+                    <Ionicons name="close-circle" size={20} color="#ef4444" />
+                    <Text style={styles.statusSummaryValue}>{analyticsData.rejectedCount}</Text>
+                    <Text style={styles.statusSummaryLabel}>Rejected</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Profile Completion Status */}
+            <View style={styles.section}>
+              <View style={styles.infoCard}>
+                <View style={styles.infoCardHeader}>
+                  <Ionicons name="person-circle" size={24} color="#06b6d4" />
+                  <Text style={styles.infoCardTitle}>Profile Status</Text>
+                </View>
+                {(() => {
+                  const calculateCompletion = () => {
+                    if (!profile) return { percentage: 0, status: "Incomplete" };
+
+                    const step1Fields = ['firstName', 'lastName', 'email', 'location'];
+                    const step2Fields = [
+                      'bio',
+                      'education',
+                      'workExperience',
+                      'experienceLevel',
+                      'yearsOfExperience'
+                    ];
+
+                    let completed = 0;
+                    const total = step1Fields.length + step2Fields.length + 2; // +2 for skills and cv
+
+                    step1Fields.forEach(f => {
+                      if (profile[f]) completed++;
+                    });
+
+                    step2Fields.forEach(f => {
+                      if (profile[f]) completed++;
+                    });
+
+                    if (profile.skills && profile.skills.length > 0) completed++;
+                    if (profile.cvUrl) completed++;
+
+                    const percentage = Math.round((completed / total) * 100);
+
+                    let status = "Getting Started";
+                    if (percentage >= 100) status = "Completed";
+                    else if (percentage >= 80) status = "Almost Done";
+                    else if (percentage >= 50) status = "Halfway There";
+
+                    return { percentage, status };
+                  };
+
+                  const { percentage, status } = calculateCompletion();
+                  const isProfileCreated = !!profile;
+
+                  return isProfileCreated ? (
+                    <>
+                      <View style={styles.progressBarContainer}>
+                        <View style={styles.progressBar}>
+                          <View style={[styles.progressBarFill, { width: `${percentage}%` }]} />
+                        </View>
+                        <Text style={styles.progressText}>{percentage}% Complete</Text>
+                      </View>
+                      <Text style={styles.infoCardText}>
+                        Status: <Text style={{ fontWeight: 'bold' }}>{status}</Text>.
+                        {percentage < 100
+                          ? " Complete your profile to increase visibility."
+                          : " Your profile is looking great!"}
+                      </Text>
+                      {percentage < 100 && (
+                        <TouchableOpacity
+                          style={styles.infoCardButton}
+                          onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                        >
+                          <Text style={styles.infoCardButtonText}>Finish Profile</Text>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.infoCardText}>
+                        Complete your profile to increase your chances of getting hired.
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.infoCardButton}
+                        onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                      >
+                        <Text style={styles.infoCardButtonText}>Complete Profile</Text>
+                      </TouchableOpacity>
+                    </>
+                  );
+                })()}
+              </View>
+            </View>
+
+            {/* Tips & Suggestions */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Tips for Success</Text>
+              <View style={styles.tipsContainer}>
+                <View style={styles.tipCard}>
+                  <Ionicons name="bulb" size={20} color="#f59e0b" />
+                  <View style={styles.tipContent}>
+                    <Text style={styles.tipTitle}>Optimize Your Profile</Text>
+                    <Text style={styles.tipText}>
+                      Add a professional photo, detailed bio, and showcase your best work samples.
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.tipCard}>
+                  <Ionicons name="trending-up" size={20} color="#22c55e" />
+                  <View style={styles.tipContent}>
+                    <Text style={styles.tipTitle}>Apply Strategically</Text>
+                    <Text style={styles.tipText}>
+                      Focus on jobs that match your skills and write personalized cover letters.
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.tipCard}>
+                  <Ionicons name="time" size={20} color="#06b6d4" />
+                  <View style={styles.tipContent}>
+                    <Text style={styles.tipTitle}>Respond Quickly</Text>
+                    <Text style={styles.tipText}>
+                      Quick responses to client messages can significantly improve your chances.
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+        <View key="myApplications" style={{ flex: 1 }}>
+          <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>My Applications</Text>
+            </View>
+
+            {applicationsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#06b6d4" />
+                <Text style={styles.loadingText}>Loading your applications...</Text>
+              </View>
+            ) : applications.length > 0 ? (
+              <>
+                {applications.map((app: any) => (
+                  <View key={app._id} style={styles.applicationCard}>
+                    <View style={styles.applicationHeader}>
+                      <Text style={styles.applicationTitle}>{app.job?.title || "Job Title"}</Text>
+                      <View style={[
+                        styles.statusBadge,
+                        app.status === "hired" ? styles.statusHired :
+                          app.status === "rejected" ? styles.statusRejected :
+                            app.status === "in_review" ? styles.statusInReview :
+                              styles.statusPending
+                      ]}>
+                        <Text style={styles.statusText}>
+                          {app.status === "in_review" ? "In Review" :
+                            app.status === "pending" ? "Pending" :
+                              app.status ? app.status.charAt(0).toUpperCase() + app.status.slice(1) : "Pending"}
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.applicationInfo}>
+                      <View style={styles.applicationInfoItem}>
+                        <Ionicons name="folder" size={16} color="#06b6d4" />
+                        <Text style={styles.applicationInfoText}>{app.job?.category || "General"}</Text>
+                      </View>
+                      <View style={styles.applicationInfoItem}>
+                        <Ionicons name="calendar" size={16} color="#06b6d4" />
+                        <Text style={styles.applicationInfoText}>
+                          {app.createdAt ? new Date(app.createdAt).toLocaleDateString() : "N/A"}
+                        </Text>
+                      </View>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.viewJobButton}
+                      onPress={() => (navigation as any).navigate("JobDetails", { jobId: app.job?._id })}
+                    >
+                      <Text style={styles.viewJobButtonText}>View Job Details</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="document-text" size={64} color={darkMode ? "#9ca3af" : "#d1d5db"} />
+                <Text style={styles.emptyStateTitle}>No applications yet</Text>
+                <Text style={styles.emptyStateText}>
+                  Start applying to jobs to see your applications here
+                </Text>
+                <TouchableOpacity
+                  style={styles.browseJobsButton}
+                  onPress={() => {
+                    setActiveTab("myJobs");
+                    pagerRef.current?.setPage(2);
+                  }}
+                >
+                  <Text style={styles.browseJobsButtonText}>Browse Jobs</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+
+        <View key="myJobs" style={{ flex: 1 }}>
+          <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Browse Jobs</Text>
+              <Text style={styles.sectionSubtitle}>
+                Find opportunities that match your skills
+              </Text>
+            </View>
+
+            {jobsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#06b6d4" />
+                <Text style={styles.loadingText}>Loading jobs...</Text>
+              </View>
+            ) : jobs.length > 0 ? (
+              <>
+                {jobs.map((job: any) => (
+                  <View key={job._id} style={styles.jobCard}>
+                    <View style={styles.jobHeader}>
+                      <Text style={styles.jobTitle}>{job.title}</Text>
+                      <View style={[
+                        styles.statusBadge,
+                        job.status === "active" ? styles.statusActive : styles.statusInactive
+                      ]}>
+                        <Text style={styles.statusText}>{job.status || "active"}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.jobInfo}>
+                      <View style={styles.jobInfoItem}>
+                        <Ionicons name="folder" size={16} color="#06b6d4" />
+                        <Text style={styles.jobInfoText}>{job.category || "General"}</Text>
+                      </View>
+                      <View style={styles.jobInfoItem}>
+                        <Ionicons name="calendar" size={16} color="#06b6d4" />
+                        <Text style={styles.jobInfoText}>
+                          {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : "N/A"}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.jobDescription} numberOfLines={2}>
+                      {job.description || "No description available."}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.viewJobButton}
+                      onPress={() => (navigation as any).navigate("JobDetails", { jobId: job._id })}
+                    >
+                      <Text style={styles.viewJobButtonText}>View Details</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <View style={styles.emptyState}>
+                <Ionicons name="briefcase" size={64} color={darkMode ? "#9ca3af" : "#d1d5db"} />
+                <Text style={styles.emptyStateTitle}>No jobs found</Text>
+                <Text style={styles.emptyStateText}>
+                  Explore and apply to jobs to get started
+                </Text>
+                <TouchableOpacity
+                  style={styles.browseJobsButton}
+                  onPress={() => (navigation as any).navigate("JobListings")}
+                >
+                  <Text style={styles.browseJobsButtonText}>Browse All Jobs</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+
+        <View key="messages" style={{ flex: 1 }}>
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ color: darkMode ? "#fff" : "#000" }}>Messages will open in a new screen</Text>
+            <TouchableOpacity
+              style={[styles.browseJobsButton, { marginTop: 16 }]}
+              onPress={() => (navigation as any).navigate("FreelancerMessages")}
+            >
+              <Text style={styles.browseJobsButtonText}>Go to Messages</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View key="profile" style={{ flex: 1 }}>
+          <ScrollView style={styles.tabContent} contentContainerStyle={styles.tabContentContainer}>
+            <View style={styles.sectionHeaderRow}>
               <TouchableOpacity
-                style={styles.headerBackButton}
-                onPress={handleBackPress}
+                style={styles.sectionBackButton}
+                onPress={() => {
+                  setActiveTab("overview");
+                  pagerRef.current?.setPage(0);
+                }}
               >
                 <Ionicons name="arrow-back" size={20} color={darkMode ? "#ffffff" : "#111827"} />
               </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Profile</Text>
             </View>
-            <Text style={styles.headerTitle}></Text>
-          </>
-        )}
-        
-        {/* Tabs */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabsContainer, Platform.OS === 'web' && { marginTop: 0, paddingTop: 0 }]}>
-          <View style={styles.tabsScrollView}>
-            {tabs.map((tab) => (
-              <TouchableOpacity
-                key={tab.id}
-                style={[styles.tab, activeTab === tab.id && styles.tabActive]}
-                onPress={() => {
-                  if (tab.id === "messages") {
-                    (navigation as any).navigate("ChatMessages");
-                    return;
-                  }
-                  setActiveTab(tab.id);
-                }}
-              >
-                <Ionicons
-                  name={tab.icon as any}
-                  size={20}
-                  color={activeTab === tab.id
-                    ? (darkMode ? "#ffffff" : "#000000")
-                    : (darkMode ? "#9ca3af" : "#6b7280")}
-                />
-                <Text style={[styles.tabText, activeTab === tab.id && styles.tabTextActive]}>
-                  {tab.label}
+
+            {profileLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#06b6d4" />
+                <Text style={styles.loadingText}>Loading profile...</Text>
+              </View>
+            ) : !profile ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="person" size={64} color={darkMode ? "#9ca3af" : "#d1d5db"} />
+                <Text style={styles.emptyStateTitle}>No profile data found</Text>
+                <Text style={styles.emptyStateText}>
+                  Complete your profile to get started
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-      </View>
-      {renderTabContent()}
+                <TouchableOpacity
+                  style={styles.browseJobsButton}
+                  onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                >
+                  <Text style={styles.browseJobsButtonText}>Setup Profile</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.profileCard}>
+                <Text style={styles.profileName}>
+                  {profile.firstName} {profile.lastName}
+                </Text>
+                <Text style={styles.profileEmail}>{user?.email}</Text>
+                {profile.bio && <Text style={styles.profileBio}>{profile.bio}</Text>}
+                {profile.skills && profile.skills.length > 0 && (
+                  <View style={styles.skillsContainer}>
+                    {profile.skills.map((skill: string, idx: number) => (
+                      <View key={idx} style={styles.skillTag}>
+                        <Text style={styles.skillText}>{skill}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {profile.location && (
+                  <Text style={styles.profileDetail}>Location: {profile.location}</Text>
+                )}
+                {profile.experienceLevel && (
+                  <Text style={styles.profileDetail}>
+                    Experience: {profile.experienceLevel}
+                    {profile.yearsOfExperience && ` (${profile.yearsOfExperience} years)`}
+                  </Text>
+                )}
+                <TouchableOpacity
+                  style={styles.editProfileButton}
+                  onPress={() => (navigation as any).navigate("FreelancerProfileSetup")}
+                >
+                  <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </ScrollView>
+        </View>
+      </PagerView>
     </View>
   );
 };

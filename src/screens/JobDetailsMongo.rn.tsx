@@ -18,7 +18,9 @@ import {
   Modal,
   TextInput,
   Share,
+  StatusBar,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
@@ -70,11 +72,12 @@ interface JobPost {
 const JobDetailsMongo: React.FC = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { jobId } = (route.params as any) || {};
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const { onNewApplication, offNewApplication } = useWebSocket();
   const { user: currentUser } = useAuth();
-  
+
   const [job, setJob] = useState<JobPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,7 +130,7 @@ const JobDetailsMongo: React.FC = () => {
       navigation.navigate("Signup" as never);
       return;
     }
-    if (job?.postedBy?._id === currentUser.id) {
+    if (job?.postedBy?._id === currentUser._id) {
       Alert.alert("Cannot Apply", "You cannot apply to your own job posting.");
       return;
     }
@@ -140,7 +143,7 @@ const JobDetailsMongo: React.FC = () => {
         type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
         copyToCacheDirectory: true,
       });
-      
+
       if (!result.canceled && result.assets[0]) {
         const file = result.assets[0];
         if (file.size && file.size > 5 * 1024 * 1024) {
@@ -173,7 +176,7 @@ const JobDetailsMongo: React.FC = () => {
     setApplying(true);
     try {
       let cvUrl = "";
-      
+
       if (cvFile) {
         const uploadResponse = await apiService.uploadCV(cvFile);
         cvUrl = apiService.getFileUrl(uploadResponse.fileUrl);
@@ -232,9 +235,8 @@ const JobDetailsMongo: React.FC = () => {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
     },
     backButton: {
       flexDirection: "row",
@@ -291,6 +293,7 @@ const JobDetailsMongo: React.FC = () => {
       fontSize: 16,
       fontWeight: "700",
       color: darkMode ? "#ffffff" : "#000000",
+      textAlign: "center",
     },
     section: {
       marginBottom: 24,
@@ -400,6 +403,7 @@ const JobDetailsMongo: React.FC = () => {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />
         <ActivityIndicator size="large" color="#06b6d4" />
         <Text style={{ marginTop: 16, color: darkMode ? "#ffffff" : "#000000" }}>
           Loading job details...
@@ -411,6 +415,7 @@ const JobDetailsMongo: React.FC = () => {
   if (error || !job) {
     return (
       <View style={[styles.container, { justifyContent: "center", alignItems: "center", padding: 20 }]}>
+        <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />
         <Ionicons name="alert-circle" size={48} color="#ef4444" />
         <Text style={[styles.title, { color: "#ef4444", marginTop: 16 }]}>
           {error || "Job not found"}
@@ -427,12 +432,13 @@ const JobDetailsMongo: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView 
+      <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />
+      <ScrollView
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => navigation.goBack()}
@@ -564,50 +570,50 @@ const JobDetailsMongo: React.FC = () => {
         )}
 
         {/* Additional Info */}
-        {(job.jobSite || job.jobSector || job.deadline || job.address) && (
+        {(job.jobSite || job.jobSector || job.deadline || job.address || job.country || job.city || job.jobLink) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Additional Information</Text>
             {job.jobSite && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="globe" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8 }]}>Job Site: {job.jobSite}</Text>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                <Ionicons name="globe" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, flex: 1 }]}>Job Site: {job.jobSite}</Text>
               </View>
             )}
             {job.jobSector && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="layers" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8 }]}>Job Sector: {job.jobSector}</Text>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                <Ionicons name="layers" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, flex: 1 }]}>Job Sector: {job.jobSector}</Text>
               </View>
             )}
             {job.deadline && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="calendar" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8 }]}>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                <Ionicons name="calendar" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, flex: 1 }]}>
                   Deadline: {formatDate(job.deadline)}
                 </Text>
               </View>
             )}
             {job.address && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="location" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8 }]}>Address: {job.address}</Text>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                <Ionicons name="location" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, flex: 1 }]}>Address: {job.address}</Text>
               </View>
             )}
             {(job.country || job.city) && (
-              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
-                <Ionicons name="map" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8 }]}>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                <Ionicons name="map" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, flex: 1 }]}>
                   {[job.city, job.country].filter(Boolean).join(", ") || "Not specified"}
                 </Text>
               </View>
             )}
             {job.jobLink && (
               <TouchableOpacity
-                style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}
+                style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}
                 onPress={() => Linking.openURL(job.jobLink!)}
               >
-                <Ionicons name="link" size={20} color="#06b6d4" />
-                <Text style={[styles.description, { marginLeft: 8, color: "#06b6d4" }]}>
+                <Ionicons name="link" size={20} color="#06b6d4" style={{ marginTop: 2 }} />
+                <Text style={[styles.description, { marginLeft: 8, color: "#06b6d4", flex: 1 }]}>
                   {job.jobLink}
                 </Text>
               </TouchableOpacity>
@@ -619,44 +625,44 @@ const JobDetailsMongo: React.FC = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Job Overview</Text>
           <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Text style={styles.infoLabel}>Experience</Text>
-              <Text style={styles.infoValue}>{job.experience || "Any Level"}</Text>
+              <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.experience || "Any Level"}</Text>
             </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Text style={styles.infoLabel}>Education</Text>
-              <Text style={styles.infoValue}>{job.education || "Any"}</Text>
+              <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.education || "Any"}</Text>
             </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Text style={styles.infoLabel}>Gender</Text>
-              <Text style={styles.infoValue}>{job.gender || "Any"}</Text>
+              <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.gender || "Any"}</Text>
             </View>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <Text style={styles.infoLabel}>Category</Text>
-              <Text style={styles.infoValue}>{job.category}</Text>
+              <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.category}</Text>
             </View>
             {job.jobSite && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text style={styles.infoLabel}>Job Site</Text>
-                <Text style={styles.infoValue}>{job.jobSite}</Text>
+                <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.jobSite}</Text>
               </View>
             )}
             {job.jobSector && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text style={styles.infoLabel}>Job Sector</Text>
-                <Text style={styles.infoValue}>{job.jobSector}</Text>
+                <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{job.jobSector}</Text>
               </View>
             )}
             {job.deadline && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text style={styles.infoLabel}>Deadline</Text>
-                <Text style={styles.infoValue}>{formatDate(job.deadline)}</Text>
+                <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>{formatDate(job.deadline)}</Text>
               </View>
             )}
             {job.compensationType && (
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <Text style={styles.infoLabel}>Compensation</Text>
-                <Text style={styles.infoValue}>
+                <Text style={[styles.infoValue, { textAlign: 'right', flex: 1, marginLeft: 16 }]}>
                   {job.compensationType}
                   {job.compensationAmount && job.currency
                     ? ` (${job.compensationAmount} ${job.currency})`
@@ -697,8 +703,8 @@ const JobDetailsMongo: React.FC = () => {
               <TouchableOpacity
                 style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}
                 onPress={() => {
-                  const url = job.companyWebsite!.startsWith('http') 
-                    ? job.companyWebsite! 
+                  const url = job.companyWebsite!.startsWith('http')
+                    ? job.companyWebsite!
                     : `https://${job.companyWebsite}`;
                   Linking.openURL(url);
                 }}
@@ -734,7 +740,7 @@ const JobDetailsMongo: React.FC = () => {
               We'll be in touch soon.
             </Text>
           </View>
-        ) : job.postedBy?._id === currentUser?.id ? (
+        ) : job.postedBy?._id === currentUser?._id ? (
           <View style={{
             backgroundColor: darkMode ? "rgba(6, 182, 212, 0.2)" : "rgba(6, 182, 212, 0.1)",
             padding: 16,

@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { useAppSelector } from "../store/hooks";
 import { useWebSocket } from "../context/WebSocketContext-react-native";
@@ -126,24 +126,27 @@ const ApplicationsManagementMongo: React.FC = () => {
     };
   }, [onNewApplication, offNewApplication]);
 
-  const filteredApplications = useMemo(() => {
+  const baseFilteredApps = useMemo(() => {
     return applications.filter((app) => {
-      const matchesTab = activeTab === "all" || app.status === activeTab;
       const matchesSearch =
         app.jobTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
         app.applicantEmail.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (app.coverLetter || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchesJob = selectedJob === "all" || app.jobTitle === selectedJob;
-      return matchesTab && matchesSearch && matchesJob;
+      return matchesSearch && matchesJob;
     });
-  }, [applications, activeTab, searchTerm, selectedJob]);
+  }, [applications, searchTerm, selectedJob]);
+
+  const filteredApplications = useMemo(() => {
+    return baseFilteredApps.filter((app) => activeTab === "all" || app.status === activeTab);
+  }, [baseFilteredApps, activeTab]);
 
   const tabCounts = useMemo(() => {
     return tabs.map((tab) => {
-      if (tab.id === "all") return applications.length;
-      return applications.filter((app) => app.status === tab.id).length;
+      if (tab.id === "all") return baseFilteredApps.length;
+      return baseFilteredApps.filter((app) => app.status === tab.id).length;
     });
-  }, [applications]);
+  }, [baseFilteredApps]);
 
   const uniqueJobTitles = useMemo(() => {
     return Array.from(new Set(applications.map((app) => app.jobTitle)));
@@ -622,32 +625,56 @@ const ApplicationsManagementMongo: React.FC = () => {
 
         {showFilters && (
           <View style={styles.filterPanel}>
-            <Text style={styles.filterLabel}>Filter by Job</Text>
-            <View style={styles.filterSelect}>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <Text style={styles.filterLabel}>Filter by Job</Text>
+              {(selectedJob !== "all" || searchTerm !== "") && (
+                <TouchableOpacity onPress={() => { setSelectedJob("all"); setSearchTerm(""); }}>
+                  <Text style={{ color: "#06b6d4", fontSize: 12, fontWeight: "600" }}>Clear All</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity
+              style={styles.filterSelect}
+              onPress={() => setShowFilters(true)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", width: '100%', height: '100%' }}>
                 <Text style={{ color: darkMode ? "#ffffff" : "#000000", flex: 1 }}>
                   {selectedJob === "all" ? "All Jobs" : selectedJob}
                 </Text>
                 <Ionicons name="chevron-down" size={20} color={darkMode ? "#ffffff" : "#000000"} />
               </View>
-            </View>
-            <ScrollView style={{ maxHeight: 200 }}>
-              <TouchableOpacity
-                style={{ paddingVertical: 8 }}
-                onPress={() => setSelectedJob("all")}
-              >
-                <Text style={{ color: darkMode ? "#ffffff" : "#000000" }}>All Jobs</Text>
-              </TouchableOpacity>
-              {uniqueJobTitles.map((jobTitle) => (
+            </TouchableOpacity>
+            <View style={{ marginTop: 8, backgroundColor: darkMode ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)", borderRadius: 12, overflow: 'hidden' }}>
+              <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled={true}>
                 <TouchableOpacity
-                  key={jobTitle}
-                  style={{ paddingVertical: 8 }}
-                  onPress={() => setSelectedJob(jobTitle)}
+                  style={[
+                    { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                    selectedJob === "all" && { backgroundColor: 'rgba(6, 182, 212, 0.1)' }
+                  ]}
+                  onPress={() => setSelectedJob("all")}
                 >
-                  <Text style={{ color: darkMode ? "#ffffff" : "#000000" }}>{jobTitle}</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: selectedJob === "all" ? "#06b6d4" : (darkMode ? "#ffffff" : "#000000"), fontWeight: selectedJob === "all" ? "700" : "400" }}>All Jobs</Text>
+                    {selectedJob === "all" && <Ionicons name="checkmark" size={18} color="#06b6d4" />}
+                  </View>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+                {uniqueJobTitles.map((jobTitle) => (
+                  <TouchableOpacity
+                    key={jobTitle}
+                    style={[
+                      { paddingVertical: 12, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                      selectedJob === jobTitle && { backgroundColor: 'rgba(6, 182, 212, 0.1)' }
+                    ]}
+                    onPress={() => setSelectedJob(jobTitle)}
+                  >
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Text style={{ color: selectedJob === jobTitle ? "#06b6d4" : (darkMode ? "#ffffff" : "#000000"), fontWeight: selectedJob === jobTitle ? "700" : "400" }}>{jobTitle}</Text>
+                      {selectedJob === jobTitle && <Ionicons name="checkmark" size={18} color="#06b6d4" />}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
           </View>
         )}
 

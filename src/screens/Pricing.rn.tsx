@@ -13,14 +13,20 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppSelector } from "../store/hooks";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppSelector, useAuth } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
+import { RootStackParamList } from "../types";
+import Footer from "../components/Footer.rn";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const Pricing: React.FC = () => {
   const darkMode = useAppSelector((s) => s.theme.darkMode);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
+  const { user, isAuthenticated } = useAuth();
   const t = useTranslation();
 
   const pricingPlans = [
@@ -32,7 +38,7 @@ const Pricing: React.FC = () => {
       period: t.pricing.forever,
       description: t.pricing.perfectForGettingStarted,
       icon: "rocket",
-      color: ["#3b82f6", "#06b6d4"],
+      color: "#3b82f6",
       features: [
         t.pricing.postUpTo3JobsLifetime,
         t.pricing.multiPlatformPosting,
@@ -53,7 +59,7 @@ const Pricing: React.FC = () => {
       period: t.pricing.perMonth,
       description: t.pricing.forGrowingBusinesses,
       icon: "crown",
-      color: ["#a855f7", "#ec4899"],
+      color: "#a855f7",
       features: [
         t.pricing.postUpTo10JobsPerMonth,
         t.pricing.multiPlatformPosting,
@@ -76,7 +82,7 @@ const Pricing: React.FC = () => {
       period: t.pricing.perMonth,
       description: t.pricing.forEnterpriseNeeds,
       icon: "diamond",
-      color: ["#f59e0b", "#ef4444"],
+      color: "#f59e0b",
       features: [
         t.pricing.unlimitedJobPosts,
         t.pricing.multiPlatformPosting,
@@ -97,10 +103,20 @@ const Pricing: React.FC = () => {
   ];
 
   const handleSelectPlan = (planId: string) => {
-    if (planId === "free") {
-      navigation.navigate("Signup" as never, { redirect: "RoleSelection" } as never);
+    if (isAuthenticated) {
+      if (planId === "free") {
+        // If already logged in and selecting free, go to dashboard
+        const targetScreen = user?.currentRole === 'client' ? 'HiringDashboard' : 'FreelancingDashboard';
+        navigation.navigate(targetScreen as any);
+      } else {
+        navigation.navigate("Payment" as any, { plan: planId });
+      }
     } else {
-      navigation.navigate("Payment" as never, { plan: planId } as never);
+      if (planId === "free") {
+        navigation.navigate("Signup" as any);
+      } else {
+        navigation.navigate("Payment" as any, { plan: planId });
+      }
     }
   };
 
@@ -132,8 +148,29 @@ const Pricing: React.FC = () => {
       flex: 1,
     },
     content: {
-      paddingTop: 80,
-      paddingBottom: 40,
+      paddingTop: 0,
+      paddingBottom: 140,
+    },
+    backNavContainer: {
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backNavContainerDark: {
+      backgroundColor: "#000000",
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
+    },
+    backTextDark: {
+      color: "#ffffff",
     },
     header: {
       alignItems: "center",
@@ -169,7 +206,7 @@ const Pricing: React.FC = () => {
     planCard: {
       width: "100%",
       maxWidth: 350,
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "#ffffff",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
       borderRadius: 24,
       padding: 32,
       borderWidth: 2,
@@ -299,7 +336,7 @@ const Pricing: React.FC = () => {
       marginBottom: 32,
     },
     faqItem: {
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "#ffffff",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "#ffffff",
       borderRadius: 16,
       padding: 24,
       marginBottom: 16,
@@ -333,6 +370,19 @@ const Pricing: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back Navigation Bar */}
+      <View style={[styles.backNavContainer, darkMode && styles.backNavContainerDark, { paddingTop: Math.max(insets.top, 12) }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={[styles.backText, darkMode && styles.backTextDark]}>Pricing</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <Animated.View entering={FadeIn.duration(800)} style={styles.header}>
           <Text style={styles.headerTitle}>
@@ -365,7 +415,7 @@ const Pricing: React.FC = () => {
 
                 <View style={[
                   styles.planIcon,
-                  { backgroundColor: plan.color[0] }
+                  { backgroundColor: plan.color }
                 ]}>
                   <Ionicons
                     name={getIconName(plan.icon) as any}
@@ -415,7 +465,7 @@ const Pricing: React.FC = () => {
                 <TouchableOpacity
                   style={[
                     styles.planButton,
-                    { backgroundColor: plan.color[0] }
+                    { backgroundColor: plan.color }
                   ]}
                   onPress={() => handleSelectPlan(plan.id)}
                 >
@@ -444,6 +494,7 @@ const Pricing: React.FC = () => {
             </Animated.View>
           ))}
         </Animated.View>
+        <Footer />
       </ScrollView>
     </View>
   );

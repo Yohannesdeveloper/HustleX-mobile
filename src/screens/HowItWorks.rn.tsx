@@ -16,6 +16,8 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppSelector } from "../store/hooks";
 import { useAuth } from "../store/hooks";
+import HomeNavbar from "../components/HomeNavbar.rn";
+import Footer from "../components/Footer.rn";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const steps = [
@@ -255,10 +257,39 @@ const HowItWorks: React.FC = () => {
       color: darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)",
       fontSize: 14,
     },
+    backNavContainer: {
+      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
+    },
   });
 
   return (
     <View style={styles.container}>
+      <HomeNavbar />
+      {/* Back Navigation Bar */}
+      <View style={styles.backNavContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={styles.backText}>How It Works</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -312,7 +343,7 @@ const HowItWorks: React.FC = () => {
         <View style={styles.ctaButtons}>
           <TouchableOpacity
             style={[styles.ctaButton, styles.ctaButtonPrimary]}
-            onPress={() => navigation.navigate("JobListings" as never)}
+            onPress={() => (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" })}
           >
             <Ionicons name="briefcase" size={20} color="#000000" />
             <Text style={styles.ctaButtonText}>Find Jobs</Text>
@@ -321,11 +352,11 @@ const HowItWorks: React.FC = () => {
             style={[styles.ctaButton, styles.ctaButtonPrimary]}
             onPress={() => {
               if (isAuthenticated) {
-                navigation.navigate("PostJob" as never);
+                (navigation as any).navigate("PostJob");
               } else {
-                navigation.navigate("Signup" as never, {
+                (navigation as any).navigate("Signup", {
                   redirect: "/post-job",
-                } as never);
+                });
               }
             }}
           >
@@ -389,6 +420,7 @@ const HowItWorks: React.FC = () => {
             </Animated.View>
           ))}
         </View>
+        <Footer />
       </ScrollView>
     </View>
   );

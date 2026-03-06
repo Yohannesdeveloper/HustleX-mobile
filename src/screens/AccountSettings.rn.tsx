@@ -14,6 +14,7 @@ import {
   Image,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -134,7 +135,7 @@ const AccountSettings: React.FC = () => {
         await refreshUser();
       }
       setTimeout(() => {
-        navigation.navigate("JobListings" as never);
+        (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" });
       }, 2000);
     } catch (e: any) {
       setError(e?.message || "Failed to save settings");
@@ -346,6 +347,7 @@ const AccountSettings: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />

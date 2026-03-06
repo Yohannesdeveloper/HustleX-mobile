@@ -4,6 +4,7 @@ import jobsReducer from "./jobsSlice";
 import themeReducer from "./themeSlice";
 import authReducer from "./authSlice";
 import languageReducer from "./languageSlice";
+import blogReducer from "./blogSlice";
 import { setJobs } from "./jobsSlice";
 import { setDarkMode } from "./themeSlice";
 import { setLanguage } from "./languageSlice";
@@ -63,6 +64,7 @@ export const store = configureStore({
     theme: themeReducer,
     auth: authReducer,
     language: languageReducer,
+    blog: blogReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -88,17 +90,17 @@ export const loadPersistedState = async () => {
     const raw = await getStorageItem(PERSIST_KEY);
     const darkRaw = await getStorageItem("hustlex_theme_dark");
     const languageRaw = await getStorageItem("hustlex_language");
-    
+
     if (raw) {
       const jobs = JSON.parse(raw);
       store.dispatch(setJobs(jobs));
     }
-    
+
     if (darkRaw) {
       const darkMode = JSON.parse(darkRaw);
       store.dispatch(setDarkMode(darkMode));
     }
-    
+
     if (languageRaw && ["en", "am", "ti", "om"].includes(languageRaw)) {
       store.dispatch(setLanguage(languageRaw as "en" | "am" | "ti" | "om"));
     }

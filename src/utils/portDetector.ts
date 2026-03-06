@@ -286,6 +286,30 @@ export async function detectBackendPort(basePort: number = 5000, hostname: strin
  * Get backend base URL
  */
 export async function getBackendUrl(): Promise<string> {
+  // Method 0: Check for production/hosted backend URL (highest priority)
+  try {
+    if (typeof require !== 'undefined') {
+      const Constants = require('expo-constants');
+      if (Constants?.default?.expoConfig?.extra?.backendUrl) {
+        const hostedUrl = Constants.default.expoConfig.extra.backendUrl;
+        if (hostedUrl && hostedUrl !== 'null' && hostedUrl.trim() !== '') {
+          console.log(`[portDetector] Using hosted backend URL: ${hostedUrl}`);
+          return hostedUrl;
+        }
+      }
+      // Also check environment variable
+      if (Constants?.default?.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL) {
+        const envUrl = Constants.default.expoConfig.extra.EXPO_PUBLIC_BACKEND_URL;
+        if (envUrl && envUrl !== 'null' && envUrl.trim() !== '') {
+          console.log(`[portDetector] Using environment backend URL: ${envUrl}`);
+          return envUrl;
+        }
+      }
+    }
+  } catch (e) {
+    // expo-constants not available, continue
+  }
+  
   let hostname = 'localhost';
   
   // Method 1: Try Expo Constants (most reliable for React Native/Expo)
@@ -343,6 +367,30 @@ export function getBackendPortSync(defaultPort: number = 5001): number {
 }
 
 export function getBackendUrlSync(): string {
+  // Method 0: Check for production/hosted backend URL (highest priority)
+  try {
+    if (typeof require !== 'undefined') {
+      const Constants = require('expo-constants');
+      if (Constants?.default?.expoConfig?.extra?.backendUrl) {
+        const hostedUrl = Constants.default.expoConfig.extra.backendUrl;
+        if (hostedUrl && hostedUrl !== 'null' && hostedUrl.trim() !== '') {
+          console.log(`[portDetector] Using hosted backend URL (sync): ${hostedUrl}`);
+          return hostedUrl;
+        }
+      }
+      // Also check environment variable
+      if (Constants?.default?.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL) {
+        const envUrl = Constants.default.expoConfig.extra.EXPO_PUBLIC_BACKEND_URL;
+        if (envUrl && envUrl !== 'null' && envUrl.trim() !== '') {
+          console.log(`[portDetector] Using environment backend URL (sync): ${envUrl}`);
+          return envUrl;
+        }
+      }
+    }
+  } catch (e) {
+    // expo-constants not available, continue
+  }
+  
   let hostname = 'localhost';
   
   // Method 1: Try Expo Constants (most reliable for React Native/Expo)

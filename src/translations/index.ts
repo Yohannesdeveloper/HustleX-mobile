@@ -15,7 +15,7 @@ export interface Translations {
     logIn: string;
     signUp: string;
   };
-  
+
   // Hero Section
   hero: {
     title: string;
@@ -26,7 +26,7 @@ export interface Translations {
     findTalent: string;
     joinAsFreelancer: string;
   };
-  
+
   // Features
   features: {
     title: string;
@@ -36,7 +36,7 @@ export interface Translations {
     securePayments: { title: string; desc: string };
     realTimeChat: { title: string; desc: string };
   };
-  
+
   // Categories
   categories: {
     title: string;
@@ -48,19 +48,27 @@ export interface Translations {
     marketing: string;
     mobile: string;
     writing: string;
-      translation: string;
-      business: string;
-      consulting: string;
-      adminSupport: string;
-      eliteFreelancers: string;
-    };
-  
+    translation: string;
+    business: string;
+    consulting: string;
+    adminSupport: string;
+    eliteFreelancers: string;
+  };
+
   // Testimonials
   testimonials: {
     title: string;
     subtitle: string;
+    list: Array<{ quote: string; name: string; role: string }>;
   };
-  
+  featuredFreelancers: {
+    title: string;
+    yohannes: { name: string; title: string; rate: string };
+    samuel: { name: string; title: string; rate: string };
+    messi: { name: string; title: string; rate: string };
+    lily: { name: string; title: string; rate: string };
+  };
+
   // CTA Section
   cta: {
     title: string;
@@ -70,7 +78,7 @@ export interface Translations {
     learnMore: string;
     findDreamWork: string;
   };
-  
+
   // Footer
   footer: {
     description: string;
@@ -88,14 +96,14 @@ export interface Translations {
     aboutUs: string;
     careers: string;
     contactUs: string;
-      helpCenter: string;
-      blog: string;
-      community: string;
-      api: string;
-      madeWith: string;
-      inEthiopia: string;
-    };
-  
+    helpCenter: string;
+    blog: string;
+    community: string;
+    api: string;
+    madeWith: string;
+    inEthiopia: string;
+  };
+
   // How It Works
   howItWorks: {
     title: string;
@@ -108,13 +116,13 @@ export interface Translations {
       succeed: { title: string; desc: string };
     };
   };
-  
+
   // Companies
   companies: {
     trustedBy: string;
     companies: string;
   };
-  
+
   // Common
   common: {
     language: string;
@@ -123,7 +131,7 @@ export interface Translations {
     error: string;
     success: string;
   };
-  
+
   // Payment
   payment: {
     backToPricing: string;
@@ -148,7 +156,7 @@ export interface Translations {
     stepPaymentProcess: string;
     stepConfirmation: string;
   };
-  
+
   // Stats
   stats: {
     happyClients: string;
@@ -156,7 +164,7 @@ export interface Translations {
     projectsCompleted: string;
     successRate: string;
   };
-  
+
   // Help Center
   helpCenter: {
     title?: string;
@@ -185,7 +193,7 @@ export interface Translations {
     noResultsFound: string;
     tryDifferentSearch: string;
   };
-  
+
   // About Us
   aboutUs: {
     activeFreelancers: string;
@@ -203,6 +211,11 @@ export interface Translations {
     globalReach: string;
     globalReachDesc: string;
     meetOurTeam: string;
+    meetOurFounder: string;
+    visionarySubtitle: string;
+    founder: string;
+    founderName: string;
+    founderBio: string;
     founderCEO: string;
     frontendDeveloper: string;
     fullstackDeveloper: string;
@@ -210,7 +223,7 @@ export interface Translations {
     frontendDeveloperBio: string;
     fullstackDeveloperBio: string;
   };
-  
+
   // Signup
   signup: {
     createAccount: string;
@@ -260,7 +273,7 @@ export interface Translations {
     googleSignupFailed: string;
     googleSignupComingSoon: string;
   };
-  
+
   // Login
   login: {
     login: string;
@@ -280,7 +293,7 @@ export interface Translations {
     googleLoginComingSoon: string;
     failedToAddRole: string;
   };
-  
+
   // PostJob
   postJob: {
     postAJob: string;
@@ -329,7 +342,7 @@ export interface Translations {
     upgradePlan: string;
     required: string;
   };
-  
+
   // FAQ
   faq: {
     whatIsHustleX: string;
@@ -350,8 +363,16 @@ export interface Translations {
     canIWorkInternationallyAnswer: string;
     isCustomerSupportAvailable: string;
     isCustomerSupportAvailableAnswer: string;
+    gotQuestions: string;
+    gotAnswers: string;
+    contactSupportDesc: string;
+    stillHaveQuestions: string;
+    howRatePlatform: string;
+    howRatePlatformAnswer: string;
+    contactSupport: string;
+    visitHelpCenter: string;
   };
-  
+
   // Contact Us
   contactUs: {
     getInTouch: string;
@@ -393,7 +414,7 @@ export interface Translations {
     failedToSendMessage: string;
     failedToSendMessageCheckConnection: string;
   };
-  
+
   // Pricing
   pricing: {
     chooseYourPlan: string;
@@ -509,13 +530,32 @@ const translations: Record<Language, Translations> = {
     testimonials: {
       title: "What Our Users Say",
       subtitle: "Join thousands of successful freelancers and businesses on HustleX",
+      list: [
+        {
+          quote: "HustleX helped me find high-paying clients in just a week! The platform is intuitive and secure.",
+          name: "Abebe Kebede",
+          role: "Freelancer",
+        },
+        {
+          quote: "Posting jobs and connecting with talented freelancers has never been easier. Highly recommend!",
+          name: "Selam Tesfaye",
+          role: "Client",
+        },
+      ],
+    },
+    featuredFreelancers: {
+      title: "Elite Freelancers",
+      yohannes: { name: "Yohannes", title: "Full Stack Developer", rate: "$28/hr" },
+      samuel: { name: "Samuel T.", title: "Full Stack Developer", rate: "$25/hr" },
+      messi: { name: "Messi", title: "Mobile Developer", rate: "$30/hr" },
+      lily: { name: "Lily M.", title: "UI/UX Designer", rate: "$30/hr" },
     },
     cta: {
-      title: "Ready to Get Started?",
-      subtitle: "Join Ethiopia's largest community of talented freelancers and businesses",
+      title: "Join Our Growing Community",
+      subtitle: "Whether you're a freelancer looking for opportunities or a business seeking talent, HustleX is your gateway to success in the digital economy.",
       subtitleHighlight: "Start your journey to success!",
       getStarted: "Get Started Today",
-      learnMore: "Learn More",
+      learnMore: "Community",
       findDreamWork: "Find Dream Work",
     },
     howItWorks: {
@@ -523,10 +563,10 @@ const translations: Record<Language, Translations> = {
       subtitle: "Watch this stunning video to see how HustleX transforms your freelance journey in just 60 seconds!",
       videoSubtitle: "HustleX",
       steps: {
-        signUp: { title: "Sign Up", desc: "Create your account in seconds and choose your role" },
-        browse: { title: "Browse & Apply", desc: "Find perfect opportunities or post your dream job" },
-        connect: { title: "Connect", desc: "Chat securely and discuss project details" },
-        succeed: { title: "Succeed", desc: "Complete projects and get paid seamlessly" },
+        signUp: { title: "Browse Jobs", desc: "Explore a wide variety of freelance jobs posted by employers. Use filters to find exactly what matches your skills." },
+        browse: { title: "Apply or Post", desc: "Freelancers can apply to jobs that fit their expertise, and clients can post new jobs with all the necessary details." },
+        connect: { title: "Connect & Work", desc: "Communicate securely through our platform, complete the tasks, and deliver quality work." },
+        succeed: { title: "Get Paid", desc: "Once the work is completed and approved, you can arrange payments directly with your client." },
       },
     },
     companies: {
@@ -688,7 +728,7 @@ const translations: Record<Language, Translations> = {
       howDoIGetStartedAsFreelancerAnswer: "Getting started is easy! Simply create a free account, complete your profile with your skills and experience, set up your payment information, and start browsing available projects. You can also create a compelling portfolio to showcase your work to potential clients.",
       howDoIPostJobAsClient: "How do I post a job as a client?",
       howDoIPostJobAsClientAnswer: "As a client, you can post jobs by creating an account, navigating to the 'Post Job' section, and providing detailed information about your project including requirements, budget, timeline, and skills needed. Our platform will match you with qualified freelancers.",
-      whatAreTheFees: "What are the fees for using HustleX?",
+      whatAreTheFees: "What are the fees for using the platform?",
       whatAreTheFeesAnswer: "For freelancers, we don't charge service fee. Clients can post jobs for free, We also offer premium memberships with additional benefits and lower fees. (coming soon)",
       whatCategoriesAvailable: "What categories of work are available?",
       whatCategoriesAvailableAnswer: "We support over 200 different skills across major categories including Development, Design, Marketing, Writing, Mobile Development, Business Consulting, Translation, and many more specialized services.",
@@ -700,6 +740,14 @@ const translations: Record<Language, Translations> = {
       canIWorkInternationallyAnswer: "Absolutely! HustleX connects Ethiopian talent with clients worldwide.",
       isCustomerSupportAvailable: "Is there customer support available?",
       isCustomerSupportAvailableAnswer: "Yes! We provide 24/7 customer support through our help center, live chat, and email. Our support team is knowledgeable about both freelancer and client needs and can help resolve any issues quickly.",
+      gotQuestions: "Got Questions? We've Got Answers!",
+      gotAnswers: "Find answers to the most common questions about using HustleX. Can't find what you're looking for? Contact our support team.",
+      contactSupportDesc: "Our support team is here to help you succeed on HustleX.",
+      stillHaveQuestions: "Still Have Questions?",
+      howRatePlatform: "How would you rate your platform?",
+      howRatePlatformAnswer: "We take pride in our service. Our users consistently rate us as the top freelance destination in Ethiopia.",
+      contactSupport: "Contact Support",
+      visitHelpCenter: "Visit Help Center",
     },
     helpCenter: {
       title: "Help Center",
@@ -729,7 +777,7 @@ const translations: Record<Language, Translations> = {
     aboutUs: {
       activeFreelancers: "Active Freelancers",
       ourStory: "Our Story",
-      ourStoryDescription: "HustleX was born from a vision to bridge the gap between Ethiopian talent and global opportunities. We believe that every skilled professional deserves access to meaningful work, regardless of location.",
+      ourStoryDescription: "Founded in 2023, HustleX was born from a simple idea: Ethiopia’s talented professionals deserve better access to global opportunities. Experiencing the challenges of the traditional job market firsthand, our founder set out to create a platform that would make freelance work accessible, fair, and rewarding. Though we are just getting started, HustleX is already building a community that connects skilled professionals with clients worldwide. Our mission goes beyond a marketplace—we’re creating a movement that empowers Ethiopia’s digital workforce to thrive in the global economy.",
       ourMission: "Our Mission",
       ourMissionDescription: "To empower Ethiopian freelancers and businesses by providing a secure, innovative platform that connects talent with opportunity, fostering economic growth and professional development.",
       ourValues: "Our Values",
@@ -742,6 +790,11 @@ const translations: Record<Language, Translations> = {
       globalReach: "Global Reach",
       globalReachDesc: "Connecting Ethiopian talent with opportunities worldwide through our platform.",
       meetOurTeam: "Meet Our Team",
+      meetOurFounder: "Meet Our Founder",
+      visionarySubtitle: "The visionary behind HustleX, dedicated to empowering Ethiopia's digital workforce",
+      founder: "Founder",
+      founderName: "Yohannes Fikre",
+      founderBio: "Driven by a passion for connecting talent with opportunity, I created HustleX to empower freelancers and clients across Ethiopia and beyond. My goal is simple: make finding work and discovering talent seamless, fair, and inspiring. At HustleX, every connection is a step toward growth, creativity, and success.",
       founderCEO: "Founder & CEO",
       frontendDeveloper: "Front-end Developer",
       fullstackDeveloper: "Full-stack Developer",
@@ -770,10 +823,10 @@ const translations: Record<Language, Translations> = {
       findWork: "Find Work",
       hireFreelancers: "Hire Freelancers",
       creatingAccount: "Creating Account...",
-      alreadyHaveAccount: "Already have an account? Enter your email above to sign in.",
-      signIn: "Sign In",
+      alreadyHaveAccount: "Already have an account?",
+      signIn: "Enter your email",
       forgotPassword: "Forgot password?",
-      signingIn: "Signing In...",
+      signingIn: "Logging in...",
       accountFound: "Account Found",
       accountExistsMessage: "An account with this email already exists. You can:",
       continueWithExistingRole: "Continue with existing role:",
@@ -809,7 +862,7 @@ const translations: Record<Language, Translations> = {
       signingIn: "Signing in...",
       signIn: "Sign In",
       dontHaveAccount: "Don't have an account?",
-      signUp: "Sign up",
+      signUp: "Register here",
       incorrectEmailOrPassword: "Incorrect email or password. Please try again.",
       googleLoginFailed: "Failed to sign in with Google",
       googleLoginComingSoon: "Google login will be implemented soon. Please use email/password.",
@@ -923,8 +976,27 @@ const translations: Record<Language, Translations> = {
       eliteFreelancers: "ከፍተኛ ነጻ ሰራተኞች",
     },
     testimonials: {
-      title: "የተጠቃሚዎቻችን ምን ይላሉ",
+      title: "ተጠቃሚዎቻችን ምን ይላሉ",
       subtitle: "በHustleX ላይ በሺዎች የሚቆጠሩ የተሳኩ ነጻ ሰራተኞች እና ንግዶች ይቀላቀሉ",
+      list: [
+        {
+          quote: "HustleX በአንድ ሳምንት ውስጥ ብቻ ከፍተኛ ክፍያ የሚከፍሉ ደንበኞችን እንዳገኝ ረድቶኛል! መድረኩ ለመጠቀም ቀላል እና አስተማማኝ ነው።",
+          name: "አበበ ከበደ",
+          role: "ነጻ ሰራተኛ",
+        },
+        {
+          quote: "ስራ መለጠፍ እና ከጎበዝ ነጻ ሰራተኞች ጋር መገናኘት ከዚህ በፊት እንዲህ ቀሎ አያውቅም። በጣም እመክራለሁ!",
+          name: "ሰላም ተስፋዬ",
+          role: "ደንበኛ",
+        },
+      ],
+    },
+    featuredFreelancers: {
+      title: "ከፍተኛ ነጻ ሰራተኞች",
+      yohannes: { name: "ዮሐንስ", title: "ሙሉ አቅርቦት አዳዲስ", rate: "፳፰ ዶላር/ሰዓት" },
+      samuel: { name: "ሳሙኤል ተ.", title: "ሙሉ አቅርቦት አዳዲስ", rate: "፳፭ ዶላር/ሰዓት" },
+      messi: { name: "ሜሲ", title: "የሞባይል አዳዲስ", rate: "፴ ዶላር/ሰዓት" },
+      lily: { name: "ሊሊ መ.", title: "UI/UX ዲዛይነር", rate: "፴ ዶላር/ሰዓት" },
     },
     cta: {
       title: "ለመጀመር ዝግጁ ነዎት?",
@@ -935,14 +1007,14 @@ const translations: Record<Language, Translations> = {
       findDreamWork: "የምትመኙትን ስራ ያግኙ",
     },
     howItWorks: {
-      title: "እንዴት ይሠራል",
-      subtitle: "HustleX ነጻ ስራ ጉዞዎን በ60 ሰከንድ ውስጥ እንዴት እንደሚቀይር ለማየት ይህንን የሚያስደንቅ ቪዲዮ ይመልከቱ!",
+      title: "እንዴት እንደሚሰራ",
+      subtitle: "HustleX በ60 ሰከንድ ውስጥ የነፃ ስራ ጉዞዎን እንዴት እንደሚለውጥ ለማየት ይህንን አስደናቂ ቪዲዮ ይመልከቱ!",
       videoSubtitle: "HustleX",
       steps: {
-        signUp: { title: "ተመዝግብ", desc: "መለያዎን በሰከንዶች ውስጥ ይፍጠሩ እና ሚናዎን ይምረጡ" },
-        browse: { title: "ያስሱ እና ያመልክቱ", desc: "ተስማሚ እድሎችን ያግኙ ወይም የምትመኙትን ስራ ይለጥፉ" },
-        connect: { title: "ይገናኙ", desc: "በደህንነት ያውሩ እና የፕሮጀክት ዝርዝሮችን ይወያዩ" },
-        succeed: { title: "ይሳኩ", desc: "ፕሮጀክቶችን ያጠናቅቁ እና በቀላሉ ይከፈሉ" },
+        signUp: { title: "ስራዎችን ያስሱ", desc: "በቀጣሪዎች የሚለጠፉ የተለያዩ የነጻ ስራዎችን ያስሱ። ከችሎታዎ ጋር በትክክል የሚዛመደውን ለማግኘት ማጣሪያዎችን ይጠቀሙ።" },
+        browse: { title: "ያመልክቱ ወይም ይለጥፉ", desc: "ነጻ ሰራተኞች ከችሎታቸው ጋር ለሚዛመዱ ስራዎች ማመልከት ይችላሉ፣ እና ደንበኞች አዳዲስ ስራዎችን ከሁሉም አስፈላጊ ዝርዝሮች ጋር መለጠፍ ይችላሉ።" },
+        connect: { title: "ይገናኙ እና ይስሩ", desc: "በመድረካችን ደህንነቱ በተጠበቀ ሁኔታ ይገናኙ፣ ተግባራቶቹን ያጠናቅቁ እና ጥራት ያለው ስራ ያቅርቡ።" },
+        succeed: { title: "ክፍያ ያግኙ", desc: "ስራው ተጠናቆ ሲጸድቅ ክፍያዎችን በቀጥታ ከደንበኛዎ ጋር ማመቻቸት ይችላሉ።" },
       },
     },
     companies: {
@@ -1109,13 +1181,21 @@ const translations: Record<Language, Translations> = {
       whatCategoriesAvailable: "ምን ዓይነት የስራ ምድቦች ይገኛሉ?",
       whatCategoriesAvailableAnswer: "ከ200 በላይ የተለያዩ ክህሎቶችን በዋና ዋና ምድቦች እንደሚከተሉት እንደሚከተሉት እንደርዳለን፡ ልማት፣ ዲዛይን፣ ግብይት፣ ጽሁፍ፣ ሞባይል ልማት፣ የንግድ ምክክር፣ ትርጉም፣ እና ብዙ ሌሎች ልዩ አገልግሎቶች።",
       howDoICommunicate: "ከነጻ ሰራተኛዬ/ደንበኛዬ እንዴት እገናኛለሁ?",
-      howDoICommunicateAnswer: "መድረካችን ለደህንነቱ የተጠበቀ ግንኙነት የተገነባ የመልእክት መሳሪያዎችን ያቀርባል። ነጻ ሰራተኛው እና ደንበኛው በዚህ የመልእክት መሳሪያዎች ወይም በቀጥታ በኢሜይል ሊገናኙ ይችላሉ።",
+      howDoICommunicateAnswer: "Our platform provides built-in messaging tools for secure communication.The freelancer and client can interact throgh this messaging tools or በቀጥታ በኢሜይል ሊገናኙ ይችላሉ።",
       whatIfNotSatisfied: "ከስራው ካልደሰትሁስ?",
       whatIfNotSatisfiedAnswer: "ማንኛውንም ችግር ለመቅረጽ የክርክር መፍትሄ ሂደት አለን። ካልደሰትሁ፣ ማሻሻያዎችን ማመልከት ወይም ክርክር ማመልከት ይችላሉ። የድጋፍ ቡድናችን ይመራል እና ለሁለቱም ወገኖች ፍትሃዊ መፍትሄ ለማግኘት ይሠራል።",
       canIWorkInternationally: "ከዓለም አቀፍ ደንበኞች/ነጻ ሰራተኞች መስራት እችላለሁ?",
       canIWorkInternationallyAnswer: "በጣም! HustleX የኢትዮጵያ ችሎታን ከዓለም አቀፍ ደንበኞች ጋር ያገናኛል።",
       isCustomerSupportAvailable: "የደንበኛ ድጋፍ ይገኛል?",
-      isCustomerSupportAvailableAnswer: "አዎ! በ24/7 የደንበኛ ድጋፍ እናቀርባለን በእርዳታ ማዕከላችን፣ ቀጥታ ውይይት፣ እና ኢሜይል። የድጋፍ ቡድናችን ስለ ነጻ ሰራተኞች እና ደንበኞች ፍላጎቶች የተማረ ነው እና ማንኛውንም ችግር በፍጥነት ለመፍታት ይረዳል።",
+      isCustomerSupportAvailableAnswer: "አዎ! በ24/7 የደንበኛ ድጋፍ እናቀርባለን በእርዳታ ማዕከላችን፣ ቀጥታ ውይይት፣ እና ኢሜይ። የድጋፍ ቡድናችን ስለ ነጻ ሰራተኞች እና ደንበኞች ፍላጎቶች የተማረ ነው እና ማንኛውንም ችግር በፍጥነት ለመፍታት ይረዳል።",
+      gotQuestions: "ጥያቄዎች አሉዎት? መልሶች አሉን!",
+      gotAnswers: "HustleX ን የመጠቀም በጣም የተለመዱ ጥያቄዎች መልሶችን ያግኙ። የሚፈልጉትን ማግኘት አልቻሉም? የድጋፍ ቡድናችንን ያነጋግሩ።",
+      contactSupportDesc: "የእኛ ድጋፍ ቡድን በ HustleX ላይ እንዲሳካዎት ለመርዳት እዚህ አለ።",
+      stillHaveQuestions: "አሁንም ጥያቄዎች አሉዎት?",
+      howRatePlatform: "መድረካችንን እንዴት ይገመግሙታል?",
+      howRatePlatformAnswer: "በአገልግሎታችን እንኮራለን። ተጠቃሚዎቻችን በኢትዮጵያ ቀዳሚ የነፃ ሥራ መዳረሻ አድርገው በቋሚነት ይመድቡናል።",
+      contactSupport: "ድጋፍ ያግኙ",
+      visitHelpCenter: "የእርዳታ ማዕከልን ይጎብኙ",
     },
     helpCenter: {
       title: "እርዳታ ማዕከል",
@@ -1147,7 +1227,7 @@ const translations: Record<Language, Translations> = {
     aboutUs: {
       activeFreelancers: "ንቁ ነጻ ሰራተኞች",
       ourStory: "የእኛ ታሪክ",
-      ourStoryDescription: "HustleX ከኢትዮጵያ ችሎታ እና ከዓለም አቀፍ እድሎች መካከል ያለውን ክፍት ለመሙላት ከራዕይ ተወለደ። እያንዳንዱ የበቁ ሙያዊዎች ቦታ ምንም ይሁን ምን ለትርጉም ያለው ስራ መዳረሻ ይገባዋል ብለን እናምናለን።",
+      ourStoryDescription: "HustleX በ2023 የተመሰረተው ከቀላል ሃሳብ ነው፡ የኢትዮጵያ ጎበዝ ባለሙያዎች የተሻለ የአለም አቀፍ እድሎች ማግኘት ይገባቸዋል። የባህላዊ የሥራ ገበያ ፈተናዎችን በገዛ እጃቸው በመለማመድ፣ መስራቻችን የነፃ ሥራን ተደራሽ፣ ፍትሃዊ እና የሚክስ የሚያደርግ መድረክ ለመፍጠር ተነሳ። ገና እየጀመርን ቢሆንም፣ HustleX ቀድሞውኑ ችሎታ ያላቸውን ባለሙያዎች በዓለም ዙሪያ ካሉ ደንበኞች ጋር የሚያገናኝ ማህበረሰብ እየገነባ ነው። የእኛ ተልእኮ ከገበያ ቦታ በላይ ነው - የኢትዮጵያ የዲጂታል የሰው ኃይል በዓለም አቀፍ ኢኮኖሚ ውስጥ እንዲበለጽግ የሚያስችል እንቅስቃሴ እየፈጠርን ነው።",
       ourMission: "የእኛ ተልዕኮ",
       ourMissionDescription: "ችሎታን ከእድል ጋር በማገናኘት፣ ኢኮኖሚያዊ እድገትን እና ሙያዊ ልማትን በማበረታታት ደህንነቱ የተጠበቀ እና የፈጠራ መድረክ በመስጠት የኢትዮጵያ ነጻ ሰራተኞችን እና ንግዶችን ማበረታታት።",
       ourValues: "የእኛ እሴቶች",
@@ -1160,6 +1240,11 @@ const translations: Record<Language, Translations> = {
       globalReach: "ዓለም አቀፍ ስፋት",
       globalReachDesc: "የኢትዮጵያ ችሎታን ከዓለም አቀፍ እድሎች ጋር በመድረካችን በመገናኘት።",
       meetOurTeam: "ቡድናችንን ይገናኙ",
+      meetOurFounder: "ሊቀ መንበራችንን ይገናኙ",
+      visionarySubtitle: "የኢትዮጵያ የዲጂታል የሰው ኃይልን ለማብቃት ቁርጠኛ የሆነው የHustleX ራዕይ ያለው ባለቤት",
+      founder: "ሊቀ መንበር",
+      founderName: "ዮሐንስ ፍቅሬ",
+      founderBio: "ችሎታን ከእድል ጋር ለማገናኘት ባለው ፍላጎት ተነሳስቼ፣ በኢትዮጵያ እና ከዚያም በላይ ያሉ ፍሪላንሰሮችን እና ደንበኞችን ለማበረታታት HustleXን ፈጠርኩ። ግቤ ቀላል ነው፡ ስራ መፈለግ እና ተሰጥኦ ማግኘት እንከን የለሽ፣ ፍትሃዊ እና አነቃቂ እንዲሆን ማድረግ። በ HustleX ላይ እያንዳንዱ ግንኙነት ወደ እድገት፣ ፈጠራ እና ስኬት የሚወስድ እርምጃ ነው።",
       founderCEO: "ፈጣሪ እና ሊቀ መንበር",
       frontendDeveloper: "የፊት አካል አዳዲስ",
       fullstackDeveloper: "ሙሉ አቅርቦት አዳዲስ",
@@ -1188,9 +1273,9 @@ const translations: Record<Language, Translations> = {
       findWork: "ስራ ፈልግ",
       hireFreelancers: "ነጻ ሰራተኞችን ማሰማራት",
       creatingAccount: "መለያ እየተፈጠረ ነው...",
-      alreadyHaveAccount: "አስቀድመው መለያ አሎት? ኢሜይልዎን ከላይ ያስገቡ እና ይግቡ።",
-      signIn: "ግባ",
-      forgotPassword: "የይለፍ ቃል ረሳኽሁ?",
+      alreadyHaveAccount: "አስቀድመው መለያ አሎት?",
+      signIn: "ኢሜይልዎን ያስገቡ",
+      forgotPassword: "የይለፍ ቃልዎን ረስተዋል?",
       signingIn: "እየገባን ነው...",
       accountFound: "መለያ ተገኝቷል",
       accountExistsMessage: "በዚህ ኢሜይል የተመዘገበ መለያ አለ። ማድረግ ይችላሉ:",
@@ -1227,7 +1312,7 @@ const translations: Record<Language, Translations> = {
       signingIn: "እየገባን ነው...",
       signIn: "ግባ",
       dontHaveAccount: "መለያ የሎትም?",
-      signUp: "ይመዝግቡ",
+      signUp: "እዚህ ይመዝገቡ",
       incorrectEmailOrPassword: "ልክ ያልሆነ ኢሜይል ወይም የይለፍ ቃል። እባክዎ እንደገና ይሞክሩ።",
       googleLoginFailed: "በGoogle መግባት አልተሳካም",
       googleLoginComingSoon: "በGoogle መግባት በቅርብ ጊዜ ይተገበራል። እባክዎ ኢሜይል/የይለፍ ቃል ይጠቀሙ።",
@@ -1343,16 +1428,35 @@ const translations: Record<Language, Translations> = {
     testimonials: {
       title: "ተጠቃሚታትና እንታይ ይብሉ",
       subtitle: "ኣብ HustleX ኣብ ሺሕታት ዝቝጸር ዝዓወቱ ነጻ ሰራሕተኛታትን ንግድታትን ተቀላቀል",
+      list: [
+        {
+          quote: "HustleX ኣብ ሓደ ሰሙን ጥራይ ዝለዓለ ክፍሊት ዝኸፍሉ ደንበኛታት ንምርካብ ሓጊዙኒ! እቲ መድረኽ ግልጽን ውሑስን እዩ።",
+          name: "አበበ ከበደ",
+          role: "ናጻ ሰራሕተኛ",
+        },
+        {
+          quote: "ስራሕ ምልጣፍን ምስ ብቑዓት ናጻ ሰራሕተኛታት ምትእስሳርን ከምዚ ሕጂ ቀሊል ኮይኑ ኣይፈልጥን። ብጥኑቕ እመክር!",
+          name: "ሰላም ተስፋዬ",
+          role: "ደንበኛ",
+        },
+      ],
+    },
+    featuredFreelancers: {
+      title: "ዝለዓለ ነጻ ሰራሕተኛታት",
+      yohannes: { name: "ዮሃንስ", title: "ሙሉእ አቅርቦት አዳዲስ", rate: "$28/ሰዓት" },
+      samuel: { name: "ሳሙኤል ተ.", title: "ሙሉእ አቅርቦት አዳዲስ", rate: "$25/ሰዓት" },
+      messi: { name: "ሜሲ", title: "ሞባይል አዳዲስ", rate: "$30/ሰዓት" },
+      lily: { name: "ሊሊ መ.", title: "UI/UX ዲዛይነር", rate: "$30/ሰዓት" },
     },
     howItWorks: {
       title: "ከመዓልቲ ይሰርሕ",
       subtitle: "HustleX ነጻ ስራ ጉዞኻ ኣብ 60 ሰከንድ ከመይ ጌርካ ከም ዝቀየሮ ንምርኣይ ነዚ ዘደንቕ ቪድዮ ርአ!",
       videoSubtitle: "HustleX",
       steps: {
-        signUp: { title: "ተመዝግብ", desc: "ኣካውንትኻ ኣብ ሰከንድታት ፍጠርን ሮልኻ ምረጽን" },
-        browse: { title: "ምርምርን ምልኣትን", desc: "ኣጋጣሚታት ርኸብ ወይ ዕላማ ስራኻ ኣርእይ" },
-        connect: { title: "ርኸብ", desc: "ብዘረጋግጽ ሓወልያ ኣውራን ዝርዝር ፕሮጀክት ዘተሓባብር" },
-        succeed: { title: "ዓወት", desc: "ፕሮጀክትታት ዛዕምን ብቐሊሉ ክፍሊት ተቐበልን" },
+        signUp: { title: "ስራሕ ብርክብ", desc: "ብቀጠርቲ ዝመሓለፉ ዝተፈላለዩ ነጻ ስራሕታት ዳህስሱ። ምስ ክእለትኩም ዝሰማማዕ ንምርካብ መጻረዪታት ተጠቐሙ።" },
+        browse: { title: "ኣመልክት ወይ ለጥፍ", desc: "ነጻ ሰራሕተኛታት ምስ ሞያኦም ዝሰማማዕ ስራሕ ክሓቱ ይኽእሉ፣ ደንበኛታት ድማ ሓደስቲ ስራሕታት ምስ ኩሉ ኣድላዪ ዝርዝራት ክልጥፉ ይኽእሉ።" },
+        connect: { title: "ተራኸቡን ስርሑን", desc: "ብመድረኽና ብውሑስ መገዲ ተራኸቡ፣ ዕማማትኩም ፈጽሙ፣ ብሉጽ ስራሕ ድማ ኣቕርቡ።" },
+        succeed: { title: "ክፍሊት ተቐበል", desc: "እቲ ስራሕ ምስ ተዛዘመን ምስ ጸደቐን፣ ክፍሊትኩም ብቐጥታ ምስ ደንበኛኹም ክተመቻችኡ ትኽእሉ ኢኹም።" },
       },
     },
     companies: {
@@ -1491,7 +1595,7 @@ const translations: Record<Language, Translations> = {
       emailAddress: "ኢመይል ኣድራሻ",
       subject: "ርእሲ",
       message: "መልእኽቲ",
-      selectSubject: "ርእሲ ምረጥ",
+      selectSubject: "ርእሲ ምረጽ",
       generalInquiry: "ናይ ሓፈሻዊ ሕቶ",
       technicalSupport: "ድጋፍ ቴክኒካዊ",
       partnership: "ኣጋርነት",
@@ -1534,8 +1638,18 @@ const translations: Record<Language, Translations> = {
       canIWorkInternationallyAnswer: "ብግሁድ! HustleX ናይ ኢትዮጵያ ችሎታ ምስ ዓለም አቀፍ ደንበኛታት ይራኸብ።",
       isCustomerSupportAvailable: "የደንበኛ ድጋፍ ኣሎ?",
       isCustomerSupportAvailableAnswer: "እወ! በ24/7 የደንበኛ ድጋፍ ንህብ በእርዳታ ማእከላትና፣ ቀጥታ ውይይት፣ እና ኢመይል። ናይ ድጋፍ ጋንታና ብዛዕባ ነጻ ሰራሕተኛታት እና ደንበኛታት ድለይቲ ዝፈልጥ እዩ እና ንኹሉ ጸገማት ብፍጥነት ንምፍታሕ ይሕግዝ።",
+      gotQuestions: "ሕቶታት ኣለኩም? መልሲ ኣለና!",
+      gotAnswers: "ብዛዕባ ኣጠቓቕማ HustleX ንዝለዓሉ ልሙዳት ሕቶታት መልሲ ረኸቡ። ዝደለኹምዎ ክትረኽቡ ኣይከኣልኩምን? ንጋንታ ድጋፍና ኣዘራርቡ።",
+      contactSupportDesc: "ጋንታ ድጋፍና ኣብ HustleX ክትዕወቱ ንምሕጋዝ ኣብዚ ኣለዉ።",
+      stillHaveQuestions: "ገና ሕቶታት ኣለኩም?",
+      howRatePlatform: "ንመድረኽና ከመይ ትግምግምዎ?",
+      howRatePlatformAnswer: "ብኣገልግሎትና ንሕበን ኢና። ተጠቀምትና ብቐጻሊ ኣብ ኢትዮጵያ ከም ቀዳማይ መዕርፎ ነጻ ስራ ይምድቡና።",
+      contactSupport: "ድጋፍ ኣግኝ",
+      visitHelpCenter: "ማዕከል ሓገዝ ተጎብኡ",
     },
     helpCenter: {
+      title: "እርዳታ ማዕከል",
+      subtitle: "መልሶችን በፍጥነት ያግኙ፣ መመሪያዎችን ያስሱ፣ ትምህርታዊ ቪዲዮዎችን ይመልከቱ፣ እና ከHustleX የተሻለ ውጤት ያግኙ።",
       searchPlaceholder: "ንጽሑፋት ሓገዝ ድለይ...",
       gettingStarted: "መጀመሪያ",
       gettingStartedDesc: "ኣካውንት ፍጠር፣ መገለጻ ኣዘውትር፣ እና መሰረታዊ ነገራት።",
@@ -1561,27 +1675,32 @@ const translations: Record<Language, Translations> = {
       tryDifferentSearch: "ካልእ ናይ ፍለጋ ቃል ፈትን",
     },
     aboutUs: {
-      activeFreelancers: "ንቁ ነጻ ሰራሕተኛታት",
+      activeFreelancers: "ንቑሓት ናጻ ሰራሕተኛታት",
       ourStory: "ናይና ታሪኽ",
-      ourStoryDescription: "HustleX ካብ ኢትዮጵያ ክህሎት እና ካብ ዓለም አቀፍ እድሎታት መካከል ዘሎ ክፍት ንምምላእ ካብ ራዕይ ተወሊዱ። ኩሉ ዝበቁ ሙያውያን ኣብ ከባቢ ዘየገድስ ንትርጉም ዘለዎም ስራ መዳረሻ ክህልዎም ኢዩ ንእምነት።",
-      ourMission: "ናይና ተልዕኮ",
-      ourMissionDescription: "ክህሎት ምስ እድል ብምራኽ፣ ኢኮኖሚያዊ ዕብየት እና ሙያዊ ልምዲ ብምበርታታት ደህንነቱ ዝተጠበቀ እና ፈጠራ ዘለዎ መድረኽ ብምሃብ ኢትዮጵያውያን ነጻ ሰራሕተኛታትን ንግድታትን ንምበርታታት።",
+      ourStoryDescription: "ኣብ 2023 ዝተመስረተ HustleX ካብ ሓደ ቀሊል ሓሳብ ዝተላዕለ እዩ፡ ብቑዓት ሞያውያን ኢትዮጵያ ዝሓሸ ተበጻሕነት ዓለምለኻዊ ዕድላት ይግብኦም እዩ። ብድሆታት ባህላዊ ዕዳጋ ስራሕ ብኣካል ብምርኣይ፣ መስራቲና ነጻ ስራ ተበጻሒ፣ ፍትሓዊን መኽሰብ ዘለዎን ዝገብር መድረኽ ንምፍጣር ተበጊሱ። ገና ንጅምር እኳ እንተሃለና፣ HustleX ድሮ ብቑዓት ሞያውያን ምስ ደንበኛታት መላእ ዓለም ዘራኽብ ማሕበረሰብ ይሃንጽ ኣሎ። ተልእኾና ካብ ዕዳጋ ጥራይ ንላዕሊ እዩ - ሞያዊ ሓይሊ ዲጂታል ኢትዮጵያ ኣብ ዓለምለኻዊ ቁጠባ ክዕወት ዘኽእል ምንቅስቓስ ንፈጥር ኣለና።",
+      ourMission: "ናይና ተልእኾ",
+      ourMissionDescription: "ክእለት ምስ ዕድል ብምራኽ፣ ኢኮኖሚያዊ ዕብየትን ሞያዊ ልምምድን ብምብራትዕ፣ ውሑስን ፈጣሪን መድረኽ ብምሃብ ንኢትዮጵያውያን ናጻ ሰራሕተኛታትን ንግድታትን ንምብቃዕ።",
       ourValues: "ናይና እሴታት",
       innovation: "ፈጠራ",
-      innovationDesc: "ንነጻ ስራ ማህበረሰብ ዝላዓለ መፍትሒታት ንምሃብ ብተኸታታሊ ንፈጥር።",
-      community: "ማህበረሰብ",
-      communityDesc: "ክህሎት ምስ እድል ዚራኸብ ድጋፍ ዘለዎ ማህበረሰብ ኣብ ኢትዮጵያ እና ኣብ ላዕሊ ምህናጽ።",
-      excellence: "ጥራት",
-      excellenceDesc: "ንልዩ ጥራት እና ሙያዊ ዕብየት ንምበርታታት ቁርጠኛ።",
-      globalReach: "ዓለም አቀፍ ስፋት",
-      globalReachDesc: "ኢትዮጵያውያን ክህሎት ምስ ዓለም አቀፍ እድሎታት ብመድረኻና ብምራኽ።",
-      meetOurTeam: "ናይና ጋንታ ርአ",
+      innovationDesc: "ንማሕበረሰብ ነጻ ስራ ዝላዓለ መፍትሒታት ንምሃብ ብቐጻሊ ንፈጥር።",
+      community: "ማሕበረሰብ",
+      communityDesc: "ክእለት ምስ ዕድል ዝራኸበሉ ደጋፊ ማሕበረሰብ ኣብ ኢትዮጵያን ካብኡ ንላዕሊን ምህናጽ።",
+      excellence: "ብሉጽነት",
+      excellenceDesc: "ፍሉይ ጽሬት ንምሃብን ሞያዊ ዕብየት ንምዕባይን ቁርጠኛታት ኢና።",
+      globalReach: "ዓለምለኻዊ ተበጻሕነት",
+      globalReachDesc: "ክእለት ኢትዮጵያውያን ምስ ዓለምለኻዊ ዕድላት ብመድረኽና ምትእስሳር።",
+      meetOurTeam: "ቡድናችንን ይገናኙ",
+      meetOurFounder: "ሊቀ መንበራችንን ይገናኙ",
+      visionarySubtitle: "ንዲጂታል ሓይሊ ሰብ ኢትዮጵያ ንምብቃዕ ዝተወፈየ ተኸታታሊ HustleX",
+      founder: "ሊቀ መንበር",
+      founderName: "ዮሃንስ ፍቅሬ",
+      founderBio: "ክእለት ምስ ዕድል ንምርኻብ ብዘለኒ ድሌት ተደፋፊአ፣ ኣብ ኢትዮጵያን ካብኡ ወጻኢን ንዘለዉ ፍሪላንሰርን ደንበኛታትን ንምብቃዕ HustleX ፈጢረ። ዕላማይ ቀሊል እዩ፡ ስራሕ ምርካብን ተውህቦ ምርካብን ስሉጥ፣ ፍትሓዊን ኣነቃቕን ምግባር። ኣብ HustleX ዝግበር ነፍሲ ወከፍ ርክብ ናብ ዕብየት፣ ፈጠራን ዓወትን ዝግበር ስጉምቲ እዩ።",
       founderCEO: "ፈጣሪ እና ሊቀ መንበር",
       frontendDeveloper: "የፊት አካል አዳዲስ",
       fullstackDeveloper: "ሙሉ አቅርቦት አዳዲስ",
-      visionaryLeaderBio: "5+ ዓመታት ኣብ ቴክ ስራ ዝተሞላ ራዕይ ዘለዎ መራሒ፣ ኢትዮጵያውያን ክህሎት ንምበርታታት ዝፈቱ።",
+      visionaryLeaderBio: "5+ ዓመታት ኣብ ቴክ ስራ ዝተሞላ ራዕይ ዘለዎ መራሒ፣ ኢትዮጵያውያን ክህሎት ንምብቃዕ ዝፈቱ።",
       frontendDeveloperBio: "ኣብ React፣ JavaScript፣ HTML፣ እና CSS ዝበቁ የፊት አካል አዳዲስ፣ ንጹህ፣ ምላሽ ዚህብ እና ንተጠቃሚ ዚመች የድር መተግበሪያታት ዚፈጥር።",
-      fullstackDeveloperBio: "ንዚዓይድ ማህበረሰባትና ሓያል፣ ማስፋፊዕ ዚኽእሉ መፍትሒታት ዚህንጥር ሙሉ አቅርቦት አዳዲስ።",
+      fullstackDeveloperBio: "ንዚዓይድ ማሕበረሰብና ሓያል፣ ክሰፍሕ ዝኽእል መፍትሒታት ዝሃንጽ ሙሉእ አቅርቦት አዳዲስ።",
     },
     signup: {
       createAccount: "ኣካውንት ፍጠር",
@@ -1759,16 +1878,35 @@ const translations: Record<Language, Translations> = {
     testimonials: {
       title: "Fayyadamiin Keenyas Maal Jettu?",
       subtitle: "Hojjattoota bilisaa milkaa'aniifi daldaltoota kumootaan lakkaa'aman HustleX irratti makamu",
+      list: [
+        {
+          quote: "HustleX torban tokko qofa keessatti kaffaltii guddaa kaffalan maamiloota akkan argadhu na gargaareera! Platform-ichi salphaa fi nageenya qaba.",
+          name: "Abebe Kebede",
+          role: "Hojjattaa Bilisaa",
+        },
+        {
+          quote: "Hojii post gochuu fi hojjattoota bilisaa ogummaa qaban waliin walqunnamuun kanaan dura salphatee hin beeku. Baay'ee gurguddaa dha!",
+          name: "Selam Tesfaye",
+          role: "Daldalaa",
+        },
+      ],
+    },
+    featuredFreelancers: {
+      title: "Hojjattoota Bilisaa Ol'aantummaa",
+      yohannes: { name: "Yohannes", title: "Hojjechuu Guutuu", rate: "$28/hr" },
+      samuel: { name: "Samuel T.", title: "Hojjechuu Guutuu", rate: "$25/hr" },
+      messi: { name: "Messi", title: "Duraan Hojjechuu", rate: "$30/hr" },
+      lily: { name: "Lily M.", title: "UI/UX Designer", rate: "$30/hr" },
     },
     howItWorks: {
       title: "Akka Itti Hojjattu",
-      subtitle: "HustleX akka safara hojii bilisaa keessan sekondii 60 keessatti akka jijjiiramu agarsiisuuf video gaarii kana ilaalaa!",
+      subtitle: "HustleX akka safara hojii bilisaa keessanti sekondii 60 keessanti akka jijjiiramu agarsiisuuf video gaarii kana ilaalaa!",
       videoSubtitle: "HustleX",
       steps: {
-        signUp: { title: "Galmaa'i", desc: "Akkaawuntii keessan sekondii keessatti uumaa fi rooli keessan filadhaa" },
-        browse: { title: "Himaali & Iyyadhuu", desc: "Carraan gaarii argadhaa yookiin hojii hawwii keessan baasaa" },
-        connect: { title: "Qunnamsiisi", desc: "Nageenyaan haasawuufi odeeffannoo projeektiin mari'atadhaa" },
-        succeed: { title: "Milkaa'i", desc: "Projeektiwwan xumuraa fi salphaan kaffaltiif kennadhaa" },
+        signUp: { title: "Hojiiwwan Hordofi", desc: "Hojiiwwan bilisaa adda addaa qaxartootaan baafaman sakatta'i. Ogummaa kee waliin kan deemu argachuuf kallaattiiwwan fayyadami." },
+        browse: { title: "Iyyadhu ykn Baasi", desc: "Hojjattoonni bilisaa hojii ogummaa isaanii waliin deemu irratti iyyachuu danda'u, qaxartoonni immoo hojii haaraa odeeffannoo barbaachisu hundaa waliin baasuu danda'u." },
+        connect: { title: "Walqunnamaa fi Hojjedhaa", desc: "Mootummaa keenya keessatti nageenyaan walqunnamaa, hojiiwwan xumuraa, fi hojii qulqullina qabu dhiyeessaa." },
+        succeed: { title: "Kaffaltii Argadhu", desc: "Hojiin xumuramee erga mirkanaa'ee booda, kaffaltii keessan kallattiin qaxartoo keessan waliin mijeessuu danda'u." },
       },
     },
     companies: {
@@ -1919,25 +2057,30 @@ const translations: Record<Language, Translations> = {
     aboutUs: {
       activeFreelancers: "Hojjattoota Bilisaa Hojjii Keessaa Jiran",
       ourStory: "Seenaa Keenya",
-      ourStoryDescription: "HustleX ogummaa Itoophiyaa fi carraa addunyaa gidduu jiruun dhalate. Ogummaa qaban hundi bakka jiruu isaanii irraa hojii muraasa argachuu qaba jechuun amanna.",
-      ourMission: "Kaayyoo Keenya",
-      ourMissionDescription: "Hojjattoota bilisaa Itoophiyaa fi daldaltoota bilisummaan, eegumsa qabu, platformii haaraa ta'e ogummaa carraa waliin walitti makuu, guddina dhaabbataa fi guddina ogummaa guddisuun bilisummaa goona.",
-      ourValues: "Garaagarummaan Keenya",
-      innovation: "Haaraa",
+      ourStoryDescription: "HustleX bara 2023 yaada salphaa irraa dhalate: ogummaa Itoophiyaa carraa addunyaa waliin walitti makuu. Rakkoo gabaa hojii aadaa keessa jiru hubachuun, hundeeffamaan keenya hojii bilisaa hundaaf dhiyaatu, haqa qabuu fi bu'aa qabu uumuuf ka'e. Hati nuti amma eegallu iyyuu, HustleX duba ogummaa qaban daldaltoota addunyaa waliin walitti makuun garee guddaa ijaaraa jira. Ergaan keenya gabaa qofa miti - humna namaa dijiitaalaa Itoophiyaa dinagdee addunyaa keessatti akka milkaa'an sochoosii uumaa jirra.",
+      ourMission: "Ergaa Keenya",
+      ourMissionDescription: "Hojjattoota bilisaa Itoophiyaa fi daldaltoota bilisummaan, eegumsa qabu, platformii haaraa ta'e ogummaa carraa waliin walitti makuu, guddina dinagdee fi guddina ogummaa guddisuun humneessuu.",
+      ourValues: "Naafiyyaa Keenya",
+      innovation: "Uumama Haaraa",
       innovationDesc: "Gareewwan bilisummaaaf qooda guddaa qaban haaraa haaraa kennina.",
-      community: "Haala",
-      communityDesc: "Ogummaa carraa Itoophiyaa fi alaatti walitti makuu gargaarsa qabu haala ijaaruu.",
+      community: "Hawaasa",
+      communityDesc: "Ogummaa carraa Itoophiyaa fi alaatti walitti makuu gargaarsa qabu hawaasa ijaaruu.",
       excellence: "Qulqullina",
-      excellenceDesc: "Qulqullina adda ta'e kennuu fi guddina ogummaa guddisuuf qophaa'ina.",
-      globalReach: "Carraa Addunyaa",
+      excellenceDesc: "Qulqullina adda ta'e kennuu fi guddina ogummaa guddisuuf of kennuun hojjechuu.",
+      globalReach: "Dhaqqabbii Addunyaa",
       globalReachDesc: "Ogummaa Itoophiyaa carraa addunyaa waliin platformii keenyaan walitti makuu.",
       meetOurTeam: "Garee Keenya Qunnamsiisi",
-      founderCEO: "Uumaa & CEO",
+      meetOurFounder: "Hundeeffamaa keenya qunnamsiisaa",
+      visionarySubtitle: "Humna namaa dijiitaalaa Itoophiyaa humneessuuf kan of kenne abbaa mul'ataa HustleX",
+      founder: "Hundeeffamaa",
+      founderName: "Yohannes Fikre",
+      founderBio: "Ogummaa carraa waliin walqunnamsiisuuf fedhii qabaachuu kootiin, Itoophiyaa fi alaatti hojjattoota bilisaa fi maamiloota humneessuuf HustleX uume. Galmi koo salphaadha: hojii barbaaduun fi ogummaa argachuun qunnamtii toora, fithaawii fi kaka'umsa qabu gochuudha. HustleX irratti, walitti dhufeenyi hundi gara guddinaa, uumamaa fi milkaa'inaatti tarkaanfii tokkodha.",
+      founderCEO: "Hundeeffamaa & CEO",
       frontendDeveloper: "Duraan Hojjechuu",
       fullstackDeveloper: "Hojjechuu Guutuu",
-      visionaryLeaderBio: "Hojjechuu teknooloojii waggaa 5+ qabatee ogummaa Itoophiyaa bilisummaa gochuuf kan qophaa'e hoggantaa ragaan qaba.",
+      visionaryLeaderBio: "Hogganaa mul'ata qabuu fi waggaa 5+ teknooloojii keessa turen, ogummaa Itoophiyaa humneessuuf fedhii qabu.",
       frontendDeveloperBio: "Hojjechuu duraan React, JavaScript, HTML, fi CSS keessatti ogummaa qaba, qulqullina, deebii kennaa, fi fayyadamaa irratti hojjataa weebii ijaaruu.",
-      fullstackDeveloperBio: "Hojjechuu guutuu haala keenya guddisaa keessatti qabiyyeessaa, guddisaa danda'u haala ijaaruu.",
+      fullstackDeveloperBio: "Hojjechuu guutuu hawaasa keenya guddisaa keessatti furmaata cimmaa fi babal'achuu danda'u ijaaruu.",
     },
     signup: {
       createAccount: "Akkaawuntii Uumaa",
@@ -2111,6 +2254,14 @@ const translations: Record<Language, Translations> = {
       canIWorkInternationallyAnswer: "Dhugumatti! HustleX ogummaa Itoophiyaa daldaltoota addunyaa waliin walitti makuu.",
       isCustomerSupportAvailable: "Deeggarsa daldalaa jira?",
       isCustomerSupportAvailableAnswer: "Eeyyee! Deeggarsa daldalaa 24/7 gidduu keenya deeggarsa, haasawa jireenyaa, fi imeelii kennina. Gareen deeggarsa keenya hojjattoota bilisaa fi daldaltoota barbaachisaa beekaa fi raawwannoo adda addaa ariifachisaa ni deeggara.",
+      gotQuestions: "Gaaffii Qabduu? Deebii Qabna!",
+      gotAnswers: "HustleX fayyadamuu irratti gaaffilee baay'ee baratamaa ta'aniif deebii argadhu. Kan barbaaddu argachuu hin dandeenye? Garee gargaarsaa keenya qunnamsiisi.",
+      contactSupportDesc: "Gareen gargaarsaa keenya HustleX irratti akka milkooftu si gargaaruuf as jira.",
+      stillHaveQuestions: "Ammas Gaaffii Qabduu?",
+      howRatePlatform: "Mootummaa keenya akkamitti madaaltu?",
+      howRatePlatformAnswer: "Tajaajila keenyatti ni boonna. Fayyadamtoonni keenya yeroo hunda Itoophiyaa keessatti bakka hojii bilisaa tokkooffaa godhanii nu madaalu.",
+      contactSupport: "Deeggarsa Qunnamsiisi",
+      visitHelpCenter: "Gidduu Gargaarsaa Ilaali",
     },
   },
 };

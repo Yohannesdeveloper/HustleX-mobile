@@ -31,7 +31,7 @@ const SantimPayWizard: React.FC = () => {
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const language = useAppSelector((s) => s.language.language);
   const dispatch = useAppDispatch();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const t = useTranslation();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -40,6 +40,7 @@ const SantimPayWizard: React.FC = () => {
   const [planId, setPlanId] = useState<string>("");
   const [planDetails, setPlanDetails] = useState<any>(null);
   const [transactionId, setTransactionId] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("telebirr");
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -48,18 +49,24 @@ const SantimPayWizard: React.FC = () => {
     }
 
     const planParam = (route.params as any)?.plan;
+    const methodParam = (route.params as any)?.method;
+
     if (planParam) {
       setPlanId(planParam);
       // Fetch plan details
       const plans = [
         { id: "free", name: "Free", price: 0, currency: "ETB" },
-        { id: "basic", name: "Basic", price: 500, currency: "ETB" },
-        { id: "premium", name: "Premium", price: 1500, currency: "ETB" },
+        { id: "basic", name: "Basic", price: 999, currency: "ETB" },
+        { id: "premium", name: "Premium", price: 9999, currency: "ETB" },
       ];
       const plan = plans.find((p) => p.id === planParam);
       if (plan) {
         setPlanDetails(plan);
       }
+    }
+
+    if (methodParam) {
+      setPaymentMethod(methodParam);
     }
   }, [isAuthenticated, navigation, route.params]);
 
@@ -70,8 +77,11 @@ const SantimPayWizard: React.FC = () => {
   ];
 
   const handlePhoneNumberSubmit = async () => {
-    if (!phoneNumber || !/^09\d{8}$/.test(phoneNumber)) {
-      Alert.alert("Error", "Please enter a valid Telebirr phone number (09XXXXXXXX)");
+    const isCBE = paymentMethod === "cbe_birr";
+    const methodName = isCBE ? "CBE Birr" : "Telebirr";
+
+    if (!phoneNumber || !/^(09|07)\d{8}$/.test(phoneNumber)) {
+      Alert.alert("Error", `Please enter a valid ${methodName} phone number (09XXXXXXXX or 07XXXXXXXX)`);
       return;
     }
 
@@ -86,37 +96,15 @@ const SantimPayWizard: React.FC = () => {
       Alert.alert(
         "Payment Request Sent",
         `${t.payment?.paymentRequestSentTo || "Payment request sent to"} ${phoneNumber}!\n\n` +
-          `${response.instructions || "Please check your phone and enter your PIN to confirm the payment."}\n\n` +
-          `Transaction ID: ${response.transactionId}\n` +
-          `Amount: ${response.amount?.toLocaleString()} ${response.currency}\n\n` +
-          `${t.payment?.checkPhoneAndEnterPin || "Please check your phone and enter your PIN"}`
+        `${response.instructions || "Please check your phone and enter your PIN to confirm the payment."}\n\n` +
+        `Transaction ID: ${response.transactionId}\n` +
+        `Amount: ${response.amount?.toLocaleString()} ${response.currency}\n\n` +
+        `${t.payment?.checkPhoneAndEnterPin || "Please check your phone and enter your PIN"}`
       );
 
       setTransactionId(response.transactionId || "");
       setCurrentStep(2);
-
-      // Poll for payment confirmation
-      const checkPaymentStatus = async () => {
-        try {
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-
-          await apiService.subscribeToPlan(planId, "telebirr");
-
-          setCurrentStep(3);
-          setIsProcessing(false);
-
-          setTimeout(() => {
-            navigation.navigate("HiringDashboard" as never);
-          }, 3000);
-        } catch (error: any) {
-          console.error("Payment confirmation error:", error);
-          Alert.alert("Error", `Payment confirmation failed: ${error.message || "Please try again"}`);
-          setIsProcessing(false);
-          setCurrentStep(1);
-        }
-      };
-
-      checkPaymentStatus();
+      setIsProcessing(false);
     } catch (error: any) {
       console.error("Payment request error:", error);
       Alert.alert(
@@ -127,8 +115,30 @@ const SantimPayWizard: React.FC = () => {
     }
   };
 
-  const handleLanguageChange = (lang: Language) => {
-    dispatch(setLanguage(lang));
+  const handleConfirmPayment = async () => {
+    setIsProcessing(true);
+    try {
+      // Small artificial delay to feel like it's checking
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      await apiService.subscribeToPlan(planId, paymentMethod);
+
+      setCurrentStep(3);
+      setIsProcessing(false);
+
+      setTimeout(() => {
+        const targetDashboard = user?.currentRole === 'client' ? 'HiringDashboard' : 'FreelancingDashboard';
+        navigation.navigate(targetDashboard as never);
+      }, 3000);
+    } catch (error: any) {
+      console.error("Payment confirmation error:", error);
+      Alert.alert("Error", `Payment confirmation failed: ${error.message || "Please try again"}`);
+      setIsProcessing(false);
+    }
+  };
+
+  const handleLanguageChange = (lang: string) => {
+    dispatch(setLanguage(lang as Language));
   };
 
   if (!isAuthenticated) {
@@ -146,6 +156,7 @@ const SantimPayWizard: React.FC = () => {
       alignItems: "center",
       padding: 16,
       backgroundColor: "#1f2937",
+      marginTop: 20,
     },
     backButton: {
       flexDirection: "row",
@@ -171,6 +182,7 @@ const SantimPayWizard: React.FC = () => {
     content: {
       flex: 1,
       padding: 20,
+      marginTop: 60,
     },
     branding: {
       alignItems: "center",
@@ -403,12 +415,12 @@ const SantimPayWizard: React.FC = () => {
             {t.payment?.backToPricing || "Back to Pricing"}
           </Text>
         </TouchableOpacity>
-        <View style={styles.languageSelector}>
+        <TouchableOpacity style={styles.languageSelector} onPress={() => handleLanguageChange(language === 'en' ? 'am' : 'en')}>
           <Ionicons name="globe" size={20} color="#ffffff" />
           <View style={{ backgroundColor: "transparent" }}>
             <Text style={{ color: "#ffffff", fontSize: 14 }}>{language.toUpperCase()}</Text>
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1 }}>
@@ -432,8 +444,8 @@ const SantimPayWizard: React.FC = () => {
                       step.completed
                         ? styles.stepCircleCompleted
                         : step.active
-                        ? styles.stepCircleActive
-                        : styles.stepCircleInactive,
+                          ? styles.stepCircleActive
+                          : styles.stepCircleInactive,
                     ]}
                   >
                     {step.completed ? (
@@ -476,17 +488,21 @@ const SantimPayWizard: React.FC = () => {
           {currentStep === 1 && (
             <View style={{ alignItems: "center" }}>
               <View style={styles.telebirrHeader}>
-                <View style={styles.telebirrIcon}>
-                  <Text style={styles.telebirrIconText}>T</Text>
+                <View style={[styles.telebirrIcon, paymentMethod === "cbe_birr" && { backgroundColor: "#7c3aed" }]}>
+                  <Text style={styles.telebirrIconText}>{paymentMethod === "cbe_birr" ? "C" : "T"}</Text>
                 </View>
-                <Text style={styles.telebirrTitle}>Telebirr</Text>
+                <Text style={[styles.telebirrTitle, paymentMethod === "cbe_birr" && { color: "#7c3aed" }]}>
+                  {paymentMethod === "cbe_birr" ? "CBE Birr" : "Telebirr"}
+                </Text>
               </View>
               <Text style={styles.processingText}>
-                {t.payment?.enterPhoneNumber || "Enter your Telebirr phone number"}
+                {paymentMethod === "cbe_birr"
+                  ? "Enter your CBE Birr phone number"
+                  : (t.payment?.enterPhoneNumber || "Enter your Telebirr phone number")}
               </Text>
               <TextInput
                 style={styles.phoneInput}
-                placeholder={t.payment?.enterPhoneNumberPlaceholder || "09XXXXXXXX"}
+                placeholder="09XXXXXXXX"
                 placeholderTextColor="#9ca3af"
                 value={phoneNumber}
                 onChangeText={setPhoneNumber}
@@ -512,20 +528,47 @@ const SantimPayWizard: React.FC = () => {
 
           {currentStep === 2 && (
             <View style={styles.processingContainer}>
-              <ActivityIndicator size="large" color="#f97316" style={styles.spinner} />
-              <Text style={styles.processingTitle}>
-                {t.payment?.paymentRequestSent || "Payment Request Sent"}
-              </Text>
-              <Text style={styles.processingText}>
-                {t.payment?.paymentRequestSentTo || "Payment request sent to"}{" "}
-                <Text style={{ fontWeight: "700" }}>{phoneNumber}</Text>
-              </Text>
-              <Text style={styles.processingText}>
-                {t.payment?.checkPhoneAndEnterPin || "Please check your phone and enter your PIN"}
-              </Text>
-              <Text style={[styles.processingText, { fontSize: 12, color: "#6b7280" }]}>
-                {t.payment?.waitingForConfirmation || "Waiting for confirmation..."}
-              </Text>
+              <View style={{ marginBottom: 24, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color="#f97316" style={styles.spinner} />
+                <Text style={styles.processingTitle}>
+                  {t.payment?.paymentRequestSent || "Payment Request Sent"}
+                </Text>
+                <Text style={styles.processingText}>
+                  {t.payment?.paymentRequestSentTo || "Payment request sent to"}{" "}
+                  <Text style={{ fontWeight: "700" }}>{phoneNumber}</Text>
+                </Text>
+                <Text style={styles.processingText}>
+                  {t.payment?.checkPhoneAndEnterPin || "Please check your phone and enter your PIN"}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.continueButton,
+                  styles.continueButtonActive,
+                  isProcessing && styles.continueButtonDisabled
+                ]}
+                onPress={handleConfirmPayment}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.continueButtonText}>
+                    I Have Paid - Confirm Now
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ marginTop: 16 }}
+                onPress={() => setCurrentStep(1)}
+                disabled={isProcessing}
+              >
+                <Text style={{ color: '#6b7280', fontSize: 14 }}>
+                  Wrong number? Go back
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -535,10 +578,11 @@ const SantimPayWizard: React.FC = () => {
                 <Ionicons name="checkmark" size={40} color="#ffffff" />
               </View>
               <Text style={styles.successTitle}>
-                {t.payment?.paymentSuccessful || "Payment Successful"}
+                {t.payment?.paymentSuccessful || "Payment Received"}
               </Text>
               <Text style={styles.successText}>
-                {t.payment?.subscriptionActivated || "Your subscription has been activated"}
+                Your subscription request has been submitted.
+                {"\n"}Admin will verify your payment and approve your subscription shortly.
               </Text>
               <Text style={[styles.successText, { fontSize: 12, color: "#6b7280" }]}>
                 {t.payment?.redirectingToDashboard || "Redirecting to dashboard..."}

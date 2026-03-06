@@ -26,7 +26,7 @@ export const useAuth = () => {
     async (userData: {
       email: string;
       password: string;
-      role: "freelancer" | "client";
+      role: "freelancer" | "client" | "admin";
       roles?: string[];
       firstName?: string;
       lastName?: string;
@@ -45,7 +45,7 @@ export const useAuth = () => {
   }, [dispatch]);
 
   const handleSwitchRole = useCallback(
-    async (role: "freelancer" | "client") => {
+    async (role: "freelancer" | "client" | "admin") => {
       const result = await dispatch(switchRole(role));
       if (switchRole.fulfilled.match(result)) {
         return result.payload;
@@ -56,7 +56,7 @@ export const useAuth = () => {
   );
 
   const handleAddRole = useCallback(
-    async (role: "freelancer" | "client") => {
+    async (role: "freelancer" | "client" | "admin") => {
       const result = await dispatch(addRole(role));
       if (addRole.fulfilled.match(result)) {
         return result.payload;

@@ -6,10 +6,13 @@ const { auth, adminAuth } = require('../middleware/auth');
 // Get all blogs with pagination and filtering
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 10, category, search } = req.query;
+    const { page = 1, limit = 10, category, search, all = 'false' } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = { isPublished: true };
+    let query = {};
+    if (all !== 'true') {
+      query.isPublished = true;
+    }
 
     if (category && category !== 'All') {
       query.category = category;
@@ -39,6 +42,17 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching blogs:', error);
+    res.status(500).json({ message: 'Failed to fetch blogs', error: error.message });
+  }
+});
+
+// Admin list of all blogs
+router.get('/admin/list', adminAuth, async (req, res) => {
+  try {
+    const blogs = await Blog.find().sort({ createdAt: -1 });
+    res.json({ blogs });
+  } catch (error) {
+    console.error('Error fetching admin blogs:', error);
     res.status(500).json({ message: 'Failed to fetch blogs', error: error.message });
   }
 });
@@ -92,7 +106,7 @@ router.post('/', auth, async (req, res) => {
 // Update blog post (admin only)
 router.put('/:id', adminAuth, async (req, res) => {
   try {
-    const { title, content, category, readTime, imageUrl } = req.body;
+    const { title, content, category, readTime, imageUrl, isPublished } = req.body;
 
     const updateData = {};
     if (title) updateData.title = title.trim();
@@ -100,6 +114,7 @@ router.put('/:id', adminAuth, async (req, res) => {
     if (category) updateData.category = category;
     if (readTime) updateData.readTime = readTime;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (isPublished !== undefined) updateData.isPublished = isPublished;
 
     const blog = await Blog.findByIdAndUpdate(
       req.params.id,

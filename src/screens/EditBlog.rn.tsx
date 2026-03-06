@@ -141,7 +141,7 @@ const EditBlog: React.FC = () => {
       backgroundColor: darkMode ? "#000000" : "#FFFFFF",
     },
     header: {
-      backgroundColor: darkMode ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)",
+      backgroundColor: darkMode ? "#111827" : "rgba(255,255,255,0.6)",
       borderBottomWidth: 1,
       borderBottomColor: darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
       paddingHorizontal: 24,
@@ -347,7 +347,6 @@ const EditBlog: React.FC = () => {
             <TextInput
               value={content}
               onChangeText={setContent}
-              required
               multiline
               numberOfLines={12}
               placeholder="Write your content..."

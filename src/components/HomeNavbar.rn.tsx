@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   Platform,
   Modal,
   ScrollView,
@@ -19,28 +19,38 @@ import { store } from "../store/index-react-native";
 import { toggleTheme } from "../store/themeSlice";
 import { setLanguage, type Language } from "../store/languageSlice";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
-import Animated, { 
-  useAnimatedStyle, 
-  withSpring, 
+import Animated, {
+  useAnimatedStyle,
+  withSpring,
   withTiming,
-  useSharedValue 
+  useSharedValue
 } from "react-native-reanimated";
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
-const HomeNavbar: React.FC = () => {
+interface HomeNavbarProps {
+  hideLinks?: boolean;
+  transparent?: boolean;
+}
+
+const HomeNavbar: React.FC<HomeNavbarProps> = ({ hideLinks = false, transparent = false }) => {
   const navigation = useNavigation();
   const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const language = useAppSelector((s) => s.language.language);
   const { user, isAuthenticated } = useAuth();
   const t = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
+  const [dotsMenuOpen, setDotsMenuOpen] = useState(false);
   const languageMenuRef = useRef<View>(null);
+  const dotsMenuRef = useRef<View>(null);
+  const { logout, switchRole } = useAuth();
 
   const userRole = user?.role || "guest";
 
@@ -51,30 +61,26 @@ const HomeNavbar: React.FC = () => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target) return;
-      
-      // Check if click is on the language button or menu
+
       const isLanguageButton = target.closest('[data-language-button]');
       const isLanguageMenu = target.closest('[data-language-menu]');
-      
-      // Also check if click is inside the language menu container
+
       const languageContainer = languageMenuRef.current;
       if (languageContainer && Platform.OS === 'web') {
         const containerElement = (languageContainer as any)._nativeNode || languageContainer;
         if (containerElement && containerElement.contains && containerElement.contains(target)) {
-          return; // Click is inside container, don't close
+          return;
         }
       }
-      
+
       if (!isLanguageButton && !isLanguageMenu) {
-        console.log('Click outside language menu, closing');
         setLanguageMenuOpen(false);
       }
     };
 
-    // Add event listener after a small delay to avoid immediate closure
     const timeoutId = setTimeout(() => {
       document.addEventListener('mousedown', handleClickOutside);
-    }, 200); // Increased delay to allow menu clicks to register
+    }, 200);
 
     return () => {
       clearTimeout(timeoutId);
@@ -84,21 +90,14 @@ const HomeNavbar: React.FC = () => {
 
   const languages: { code: Language; name: string; nativeName: string }[] = [
     { code: "en", name: "English", nativeName: "English" },
-    { code: "am", name: "Amharic", nativeName: "አማርኛ" },
-    { code: "ti", name: "Tigrinya", nativeName: "ትግርኛ" },
-    { code: "om", name: "Afan Oromo", nativeName: "Afaan Oromoo" },
+    { code: "am", name: "አማርኛ", nativeName: "አማርኛ" },
+    { code: "ti", name: "ትግርኛ", nativeName: "ትግርኛ" },
+    { code: "om", name: "Afaan Oromoo", nativeName: "Afaan Oromoo" },
   ];
 
-  // Recalculate current language when language state changes
   const currentLanguage = React.useMemo(() => {
     const found = languages.find((lang) => lang.code === language);
-    console.log('Current language from Redux:', language, 'Found:', found);
     return found || languages[0];
-  }, [language]);
-
-  // Debug: Log when language changes
-  useEffect(() => {
-    console.log('Language state changed in HomeNavbar:', language);
   }, [language]);
 
   const toggleDarkMode = () => {
@@ -106,34 +105,15 @@ const HomeNavbar: React.FC = () => {
   };
 
   const handleLanguageChange = (lang: Language) => {
-    console.log('=== Language Change Start ===');
-    console.log('Changing language to:', lang);
-    console.log('Current language before change:', language);
-    
-    // Prevent selecting the same language
     if (lang === language) {
-      console.log('Language already selected, closing menu');
       setLanguageMenuOpen(false);
       return;
     }
-    
+
     try {
-      // Update Redux state - this should trigger re-render via useTranslation hook
       dispatch(setLanguage(lang));
-      console.log('Language dispatch completed for:', lang);
-      
-      // Verify the state was updated
-      setTimeout(() => {
-        const newState = store.getState();
-        console.log('Redux state after dispatch:', newState.language.language);
-        console.log('Expected:', lang, 'Actual:', newState.language.language);
-      }, 50);
-      
-      // Close menu after a small delay to ensure state update
       setTimeout(() => {
         setLanguageMenuOpen(false);
-        console.log('Menu closed, new language should be:', lang);
-        console.log('=== Language Change End ===');
       }, 150);
     } catch (error) {
       console.error('Error in handleLanguageChange:', error);
@@ -141,8 +121,37 @@ const HomeNavbar: React.FC = () => {
   };
 
   const navigate = (route: string) => {
-    navigation.navigate(route as never);
+    if (route === "HomeFinal") {
+      // Reset to main tab navigator
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "MainSwipeableTabs" as never }],
+      });
+    } else {
+      navigation.navigate(route as never);
+    }
     setMenuOpen(false);
+    setDotsMenuOpen(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    setDotsMenuOpen(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MainSwipeableTabs" as never }],
+    });
+  };
+
+  const handleSwitchRoleAction = async (newRole: "freelancer" | "client") => {
+    try {
+      await switchRole(newRole);
+      setDotsMenuOpen(false);
+      const targetDashboard = newRole === "client" ? "HiringDashboard" : "FreelancingDashboard";
+      navigation.navigate(targetDashboard as never);
+    } catch (error) {
+      console.error("Error switching role:", error);
+    }
   };
 
   const scale = useSharedValue(1);
@@ -154,8 +163,8 @@ const HomeNavbar: React.FC = () => {
   const styles = StyleSheet.create({
     container: {
       width: '100%',
-      backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-      borderBottomWidth: 1,
+      backgroundColor: transparent ? 'transparent' : (darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)'),
+      borderBottomWidth: transparent ? 0 : 1,
       borderBottomColor: darkMode ? 'rgba(6, 182, 212, 0.2)' : 'rgba(6, 182, 212, 0.1)',
       paddingVertical: 8,
       paddingHorizontal: 16,
@@ -183,18 +192,12 @@ const HomeNavbar: React.FC = () => {
       }),
     },
     logo: {
-      fontSize: Math.max(Platform.OS === 'web' ? 24 : 20, 14), // Ensure minimum fontSize
+      fontSize: Math.max(Platform.OS === 'web' ? 24 : 20, 14),
       fontWeight: '800',
-      letterSpacing: Platform.OS === 'android' ? 0 : -0.5, // Android has issues with negative letterSpacing
+      letterSpacing: Platform.OS === 'android' ? 0 : -0.5,
       flexDirection: 'row',
       alignItems: 'center',
       flexShrink: 0,
-      ...Platform.select({
-        web: {
-          minWidth: 'auto',
-          marginRight: 16,
-        },
-      }),
     },
     logoText: {
       color: darkMode ? '#ffffff' : '#000000',
@@ -227,11 +230,6 @@ const HomeNavbar: React.FC = () => {
       alignItems: 'center',
       gap: 4,
       flexShrink: 0,
-      ...Platform.select({
-        web: {
-          whiteSpace: 'nowrap',
-        },
-      }),
     },
     navLinkText: {
       fontSize: 12,
@@ -242,13 +240,6 @@ const HomeNavbar: React.FC = () => {
       alignItems: 'center',
       gap: 8,
       flexShrink: 0,
-      ...Platform.select({
-        web: {
-          zIndex: 100,
-          minWidth: 'auto',
-          marginLeft: 16,
-        },
-      }),
     },
     iconButton: {
       padding: 8,
@@ -280,15 +271,7 @@ const HomeNavbar: React.FC = () => {
     },
     languageContainer: {
       position: 'relative',
-      ...Platform.select({
-        web: {
-          zIndex: 10000,
-          display: 'flex',
-        },
-        default: {
-          zIndex: 1000,
-        },
-      }),
+      zIndex: 1000,
     },
     languageMenu: {
       position: 'absolute',
@@ -299,24 +282,15 @@ const HomeNavbar: React.FC = () => {
       borderRadius: 8,
       padding: 8,
       minWidth: 150,
-      borderWidth: Platform.OS === 'web' ? 1 : 0,
+      borderWidth: 1,
       borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
       ...Platform.select({
         web: {
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           zIndex: 10001,
-          overflow: 'visible',
-          display: 'flex',
-          flexDirection: 'column',
-          position: 'absolute',
         },
         default: {
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
           elevation: 10,
-          zIndex: 1001,
         },
       }),
     },
@@ -331,6 +305,49 @@ const HomeNavbar: React.FC = () => {
     },
     activeLanguage: {
       backgroundColor: darkMode ? 'rgba(6, 182, 212, 0.2)' : 'rgba(6, 182, 212, 0.1)',
+    },
+    dotsMenu: {
+      position: 'absolute',
+      top: '100%',
+      right: 0,
+      marginTop: 8,
+      backgroundColor: darkMode ? '#1a1a1a' : '#ffffff',
+      borderRadius: 12,
+      padding: 8,
+      minWidth: 180,
+      borderWidth: 1,
+      borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+      zIndex: 10002,
+      ...Platform.select({
+        web: {
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+        },
+        default: {
+          elevation: 10,
+        },
+      }),
+    },
+    dotsMenuItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      gap: 12,
+    },
+    dotsMenuItemText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: darkMode ? '#ffffff' : '#1f2937',
+    },
+    logoutItem: {
+      marginTop: 4,
+      borderTopWidth: 1,
+      borderTopColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+      paddingTop: 12,
+    },
+    logoutText: {
+      color: '#ef4444',
     },
     authButton: {
       paddingHorizontal: 16,
@@ -356,7 +373,6 @@ const HomeNavbar: React.FC = () => {
     },
   });
 
-  // Recreate navLinks when language changes to ensure translations update
   const navLinks = React.useMemo(() => [
     { to: "HomeFinal", label: t.nav.home },
     { to: "AboutUs", label: t.nav.aboutUs },
@@ -369,25 +385,17 @@ const HomeNavbar: React.FC = () => {
   ], [t, language]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: Math.max(insets.top, 8) }]}>
       <View style={styles.content}>
-        {/* Logo */}
         <AnimatedTouchable
           style={[styles.logo, animatedStyle]}
           onPress={() => navigate("HomeFinal")}
-          onPressIn={() => {
-            scale.value = withSpring(1.05);
-          }}
-          onPressOut={() => {
-            scale.value = withSpring(1);
-          }}
         >
           <Text style={styles.logoText}>Hustle</Text>
           <Text style={styles.logoX}>X</Text>
         </AnimatedTouchable>
 
-        {/* Desktop Nav Links */}
-        {Platform.OS === 'web' && (
+        {Platform.OS === 'web' && !hideLinks && (
           <View style={styles.navLinks}>
             {navLinks.map((link) => (
               <TouchableOpacity
@@ -401,142 +409,141 @@ const HomeNavbar: React.FC = () => {
           </View>
         )}
 
-        {/* Right Section */}
         <View style={styles.rightSection}>
-          {/* Language Switcher */}
           <View style={styles.languageContainer} ref={languageMenuRef}>
             <TouchableOpacity
               style={styles.iconButton}
               onPress={() => setLanguageMenuOpen(!languageMenuOpen)}
-              {...(Platform.OS === 'web' && { 'data-language-button': true } as any)}
             >
-              <Ionicons 
-                name="language" 
-                size={20} 
-                color={darkMode ? '#ffffff' : '#000000'} 
+              <Ionicons
+                name="language"
+                size={20}
+                color={darkMode ? '#ffffff' : '#000000'}
               />
             </TouchableOpacity>
             {languageMenuOpen && (
-              <View 
-                style={styles.languageMenu}
-                {...(Platform.OS === 'web' && { 'data-language-menu': true } as any)}
-              >
-                {languages.map((lang) => {
-                  const isActive = currentLanguage.code === lang.code;
-                  return (
-                    <TouchableOpacity
-                      key={lang.code}
-                      style={[
-                        styles.languageOption,
-                        isActive && styles.activeLanguage
-                      ]}
-                      onPress={() => {
-                        console.log('=== Language Option Clicked ===');
-                        console.log('Selected language:', lang.code);
-                        console.log('Current language:', language);
-                        console.log('Is active:', isActive);
-                        
-                        if (lang.code !== language) {
-                          console.log('Calling handleLanguageChange with:', lang.code);
-                          handleLanguageChange(lang.code);
-                        } else {
-                          console.log('Same language selected, just closing menu');
-                          setLanguageMenuOpen(false);
-                        }
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.languageOptionText}>
-                        {lang.nativeName}
-                        {isActive && ' ✓'}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
+              <View style={styles.languageMenu}>
+                {languages.map((lang) => (
+                  <TouchableOpacity
+                    key={lang.code}
+                    style={[styles.languageOption, currentLanguage.code === lang.code && styles.activeLanguage]}
+                    onPress={() => handleLanguageChange(lang.code)}
+                  >
+                    <Text style={styles.languageOptionText}>
+                      {lang.nativeName}
+                      {currentLanguage.code === lang.code && ' ✓'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
             )}
           </View>
 
-          {/* Dark Mode Toggle */}
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={toggleDarkMode}
-          >
-            <Ionicons
-              name={darkMode ? "sunny" : "moon"}
-              size={20}
-              color={darkMode ? '#ffffff' : '#000000'}
-            />
-          </TouchableOpacity>
-
-          {/* Desktop Login/Signup Buttons */}
-          {Platform.OS === 'web' && !isAuthenticated && (
-            <>
-              <TouchableOpacity
-                style={[styles.authButton, styles.loginButton]}
-                onPress={() => navigate("Login")}
-              >
-                <Text style={styles.authButtonText}>{t.nav.logIn}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.authButton, styles.signupButton]}
-                onPress={() => navigate("Signup")}
-              >
-                <Text style={[styles.authButtonText, styles.signupButtonText]}>
-                  {t.nav.signUp}
-                </Text>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {/* Mobile Menu Button */}
-          {Platform.OS !== 'web' && (
+          <View style={styles.languageContainer} ref={dotsMenuRef}>
             <TouchableOpacity
-              style={styles.menuButton}
-              onPress={() => setMenuOpen(!menuOpen)}
+              style={styles.iconButton}
+              onPress={() => setDotsMenuOpen(!dotsMenuOpen)}
             >
               <Ionicons
-                name={menuOpen ? "close" : "menu"}
-                size={24}
+                name="ellipsis-vertical"
+                size={22}
                 color={darkMode ? '#ffffff' : '#000000'}
               />
+            </TouchableOpacity>
+
+            {dotsMenuOpen && (
+              <View style={styles.dotsMenu}>
+                <TouchableOpacity style={styles.dotsMenuItem} onPress={toggleDarkMode}>
+                  <Ionicons name={darkMode ? "sunny" : "moon"} size={20} color={darkMode ? "#fbbf24" : "#4b5563"} />
+                  <Text style={styles.dotsMenuItemText}>{darkMode ? "Light Mode" : "Dark Mode"}</Text>
+                </TouchableOpacity>
+
+                {isAuthenticated && (
+                  <>
+                    <TouchableOpacity style={styles.dotsMenuItem} onPress={() => navigate(user?.currentRole === "client" ? "HiringDashboard" : "FreelancingDashboard")}>
+                      <Ionicons name="grid" size={20} color="#06b6d4" />
+                      <Text style={styles.dotsMenuItemText}>Dashboard</Text>
+                    </TouchableOpacity>
+                    {user?.roles && user.roles.length > 1 && (
+                      <TouchableOpacity
+                        style={styles.dotsMenuItem}
+                        onPress={() => handleSwitchRoleAction(user.currentRole === "client" ? "freelancer" : "client")}
+                      >
+                        <Ionicons name="swap-horizontal" size={20} color="#f59e0b" />
+                        <Text style={styles.dotsMenuItemText}>
+                          Switch to {user.currentRole === "client" ? "Freelancer" : "Client"}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                    {(user?.roles?.includes('admin') || user?.email?.toLowerCase() === 'hustlexet@gmail.com') && (
+                      <>
+                        <TouchableOpacity style={styles.dotsMenuItem} onPress={() => navigate("SubscriptionAdmin")}>
+                          <Ionicons name="card" size={20} color="#a855f7" />
+                          <Text style={styles.dotsMenuItemText}>Subscriptions</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.dotsMenuItem} onPress={() => navigate("JobAdmin")}>
+                          <Ionicons name="briefcase" size={20} color="#06b6d4" />
+                          <Text style={styles.dotsMenuItemText}>Job Admin</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.dotsMenuItem} onPress={() => navigate("BlogAdmin")}>
+                          <Ionicons name="reader" size={20} color="#f59e0b" />
+                          <Text style={styles.dotsMenuItemText}>Blog Admin</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                    <TouchableOpacity style={[styles.dotsMenuItem, styles.logoutItem]} onPress={handleLogout}>
+                      <Ionicons name="log-out" size={20} color="#ef4444" />
+                      <Text style={[styles.dotsMenuItemText, styles.logoutText]}>Logout</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+
+                {!isAuthenticated && (
+                  <>
+                    <TouchableOpacity style={styles.dotsMenuItem} onPress={() => navigate("Signup")}>
+                      <Ionicons name="person-add" size={20} color="#06b6d4" />
+                      <Text style={styles.dotsMenuItemText}>{t.nav.signUp}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            )}
+          </View>
+
+          {Platform.OS === 'web' && !isAuthenticated && (
+            <View style={{ flexDirection: 'row' }}>
+              <TouchableOpacity style={[styles.authButton, styles.loginButton]} onPress={() => navigate("Signup")}>
+                <Text style={styles.authButtonText}>{t.nav.logIn}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.authButton, styles.signupButton]} onPress={() => navigate("Signup")}>
+                <Text style={[styles.authButtonText, styles.signupButtonText]}>{t.nav.signUp}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {Platform.OS !== 'web' && !hideLinks && (
+            <TouchableOpacity style={styles.menuButton} onPress={() => setMenuOpen(!menuOpen)}>
+              <Ionicons name={menuOpen ? "close" : "menu"} size={24} color={darkMode ? '#ffffff' : '#000000'} />
             </TouchableOpacity>
           )}
         </View>
       </View>
 
-      {/* Mobile Menu */}
-      {menuOpen && Platform.OS !== 'web' && (
+      {menuOpen && Platform.OS !== 'web' && !hideLinks && (
         <ScrollView style={styles.mobileMenu}>
           {navLinks.map((link) => (
-            <TouchableOpacity
-              key={link.to}
-              style={styles.menuItem}
-              onPress={() => navigate(link.to)}
-            >
+            <TouchableOpacity key={link.to} style={styles.menuItem} onPress={() => navigate(link.to)}>
               <Text style={styles.menuItemText}>{link.label}</Text>
             </TouchableOpacity>
           ))}
           {isAuthenticated ? (
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => navigate(userRole === "client" ? "HiringDashboard" : "FreelancingDashboard")}
-            >
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigate(userRole === "client" ? "HiringDashboard" : "FreelancingDashboard")}>
               <Text style={styles.menuItemText}>Dashboard</Text>
             </TouchableOpacity>
           ) : (
             <>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigate("Signup")}
-              >
-                <Text style={styles.menuItemText}>{t.nav.signUp}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={() => navigate("Login")}
-              >
-                <Text style={styles.menuItemText}>{t.nav.logIn}</Text>
+              <TouchableOpacity style={styles.menuItem} onPress={() => navigate("Signup")}>
+                <Text style={styles.menuItemText}>{t.nav.signUp} / {t.nav.logIn}</Text>
               </TouchableOpacity>
             </>
           )}

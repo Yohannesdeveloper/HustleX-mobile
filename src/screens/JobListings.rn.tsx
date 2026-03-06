@@ -3,7 +3,7 @@
  * Browse jobs with search, filters, and pagination
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,9 +17,11 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppSelector } from '../store/hooks';
-import HomeNavbar from '../components/HomeNavbar.rn';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { setTotalJobsCount } from '../store/jobsSlice';
+import BottomNav from '../components/BottomNav.rn';
 import apiService from '../services/api-react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
@@ -49,8 +51,10 @@ interface Job {
 
 const JobListings: React.FC = () => {
   const navigation = useNavigation();
+  const dispatch = useAppDispatch();
+  const insets = useSafeAreaInsets();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
-  
+
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -61,6 +65,8 @@ const JobListings: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const scrollRef = useRef<ScrollView>(null);
 
   const categories = [
     'all',
@@ -79,25 +85,27 @@ const JobListings: React.FC = () => {
 
   useEffect(() => {
     fetchJobs();
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   }, [selectedCategory, selectedJobType, selectedLocation, page]);
 
   const fetchJobs = async () => {
     try {
       setLoading(true);
-      
+
       const response = await apiService.getJobs({
         page,
-        limit: 10,
+        limit: 5,
         category: selectedCategory !== 'all' ? selectedCategory : undefined,
         jobType: selectedJobType !== 'all' ? selectedJobType : undefined,
         workLocation: selectedLocation !== 'all' ? selectedLocation : undefined,
         search: searchQuery || undefined,
       });
 
-      if (page === 1) {
-        setJobs(response.jobs || []);
-      } else {
-        setJobs((prev) => [...prev, ...(response.jobs || [])]);
+      setJobs(response.jobs || []);
+
+      if (response.pagination) {
+        dispatch(setTotalJobsCount(response.pagination.total));
+        setTotalPages(response.pagination.pages);
       }
 
       setHasMore(response.pagination.current < response.pagination.pages);
@@ -130,7 +138,7 @@ const JobListings: React.FC = () => {
   };
 
   const handleJobPress = (jobId: string) => {
-    navigation.navigate('JobDetails' as never, { jobId } as never);
+    (navigation as any).navigate('JobDetails', { jobId });
   };
 
   const formatDate = (dateString?: string) => {
@@ -139,7 +147,7 @@ const JobListings: React.FC = () => {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays} days ago`;
@@ -148,11 +156,25 @@ const JobListings: React.FC = () => {
 
   return (
     <View style={[styles.container, darkMode && styles.containerDark]}>
-      <HomeNavbar />
-      
+      {/* HomeNavbar removed */}
+      {/* Back Navigation Bar */}
+      <View style={[styles.backNavContainer, darkMode && styles.backNavContainerDark, { paddingTop: Math.max(insets.top, 12) }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={[styles.backText, darkMode && styles.backTextDark]}>Job Listings</Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
+        ref={scrollRef}
+        style={[styles.scrollView, darkMode && { backgroundColor: '#000' }]}
+        contentContainerStyle={[styles.contentContainer, darkMode && { backgroundColor: '#000' }]}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
@@ -160,7 +182,7 @@ const JobListings: React.FC = () => {
       >
         {/* Search and Filter Section */}
         <View style={[styles.searchSection, darkMode && styles.searchSectionDark]}>
-          <View style={styles.searchContainer}>
+          <View style={[styles.searchContainer, darkMode && styles.searchContainerDark]}>
             <Ionicons name="search" size={20} color={darkMode ? '#999' : '#666'} style={styles.searchIcon} />
             <TextInput
               style={[styles.searchInput, darkMode && styles.searchInputDark]}
@@ -452,6 +474,62 @@ const JobListings: React.FC = () => {
                 </TouchableOpacity>
               </Animated.View>
             ))}
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                  style={[styles.paginationButton, page === 1 && styles.paginationButtonDisabled, darkMode && styles.paginationButtonDark]}
+                  onPress={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                >
+                  <Ionicons name="chevron-back" size={20} color={page === 1 ? (darkMode ? '#444' : '#ccc') : (darkMode ? '#fff' : '#000')} />
+                </TouchableOpacity>
+
+                <View style={styles.pageNumbers}>
+                  {(() => {
+                    const pages = [];
+                    // Simple page numbering logic: show 5 pages around current
+                    let start = Math.max(1, page - 2);
+                    let end = Math.min(totalPages, start + 4);
+                    if (end === totalPages) start = Math.max(1, end - 4);
+
+                    for (let i = start; i <= end; i++) {
+                      pages.push(
+                        <TouchableOpacity
+                          key={i}
+                          style={[
+                            styles.pageNumber,
+                            page === i && styles.pageNumberActive,
+                            darkMode && styles.pageNumberDark,
+                            page === i && darkMode && styles.pageNumberActiveDark,
+                          ]}
+                          onPress={() => setPage(i)}
+                        >
+                          <Text style={[
+                            styles.pageNumberText,
+                            page === i && styles.pageNumberTextActive,
+                            darkMode && styles.pageNumberTextDark,
+                            page === i && darkMode && styles.pageNumberTextActiveDark
+                          ]}>
+                            {i}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    }
+                    return pages;
+                  })()}
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.paginationButton, page === totalPages && styles.paginationButtonDisabled, darkMode && styles.paginationButtonDark]}
+                  onPress={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                >
+                  <Ionicons name="chevron-forward" size={20} color={page === totalPages ? (darkMode ? '#444' : '#ccc') : (darkMode ? '#fff' : '#000')} />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>
@@ -471,7 +549,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   searchSection: {
     padding: 16,
@@ -492,6 +570,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#e5e7eb',
+  },
+  searchContainerDark: {
+    backgroundColor: '#111',
+    borderColor: '#333',
   },
   searchIcon: {
     marginRight: 8,
@@ -826,6 +908,93 @@ const styles = StyleSheet.create({
   },
   emptySubtextDark: {
     color: '#999',
+  },
+  backNavContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    paddingTop: Platform.OS === 'ios' ? 50 : 30,
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+  },
+  backNavContainerDark: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  backText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000000',
+  },
+  backTextDark: {
+    color: '#ffffff',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+    gap: 8,
+  },
+  paginationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  paginationButtonDark: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#333',
+  },
+  paginationButtonDisabled: {
+    opacity: 0.5,
+  },
+  pageNumbers: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  pageNumber: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  pageNumberDark: {
+    backgroundColor: '#1a1a1a',
+    borderColor: '#333',
+  },
+  pageNumberActive: {
+    backgroundColor: '#06b6d4',
+    borderColor: '#06b6d4',
+  },
+  pageNumberActiveDark: {
+    backgroundColor: '#06b6d4',
+    borderColor: '#06b6d4',
+  },
+  pageNumberText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  pageNumberTextDark: {
+    color: '#999',
+  },
+  pageNumberTextActive: {
+    color: '#fff',
+  },
+  pageNumberTextActiveDark: {
+    color: '#fff',
   },
 });
 

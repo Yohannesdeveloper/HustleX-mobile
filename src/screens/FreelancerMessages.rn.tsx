@@ -40,7 +40,10 @@ const FreelancerMessages: React.FC = () => {
       navigation.goBack();
       return true;
     }
-    navigation.navigate("HomeFinal" as never);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "MainSwipeableTabs" as never }],
+    });
     return true;
   }, [navigation]);
 

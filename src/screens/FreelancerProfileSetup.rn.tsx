@@ -18,6 +18,7 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -80,6 +81,7 @@ const FreelancerProfileSetup: React.FC = () => {
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [dataLoaded, setDataLoaded] = useState(false);
   const [profileData, setProfileData] = useState<ProfileData>({
     firstName: user?.profile?.firstName || "",
     lastName: user?.profile?.lastName || "",
@@ -88,25 +90,25 @@ const FreelancerProfileSetup: React.FC = () => {
     location: user?.profile?.location || "",
     profilePicture: null,
     profilePicturePreview: user?.profile?.avatar && apiService?.getFileUrl ? apiService.getFileUrl(user?.profile?.avatar) : null,
-    experienceLevel: "",
-    portfolioUrl: "",
-    linkedinUrl: "",
-    githubUrl: "",
+    experienceLevel: user?.profile?.experienceLevel || "",
+    portfolioUrl: user?.profile?.portfolioUrl || "",
+    linkedinUrl: user?.profile?.linkedinUrl || "",
+    githubUrl: user?.profile?.githubUrl || "",
     cvFile: null,
     existingCvUrl: user?.profile?.cvUrl || "",
-    bio: "",
-    education: "",
-    workExperience: "",
-    skills: [],
-    primarySkill: "",
-    yearsOfExperience: "",
-    certifications: [],
-    availability: "Available",
-    monthlyRate: "",
-    currency: "USD",
-    preferredJobTypes: [],
-    workLocation: "Remote",
-    websiteUrl: "",
+    bio: user?.profile?.bio || "",
+    education: user?.profile?.education || "",
+    workExperience: user?.profile?.workExperience || "",
+    skills: user?.profile?.skills || [],
+    primarySkill: user?.profile?.primarySkill || "",
+    yearsOfExperience: user?.profile?.yearsOfExperience || "",
+    certifications: user?.profile?.certifications || [],
+    availability: user?.profile?.availability || "Available",
+    monthlyRate: user?.profile?.monthlyRate || "",
+    currency: user?.profile?.currency || "USD",
+    preferredJobTypes: user?.profile?.preferredJobTypes || [],
+    workLocation: user?.profile?.workLocation || "Remote",
+    websiteUrl: user?.profile?.websiteUrl || "",
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -118,6 +120,40 @@ const FreelancerProfileSetup: React.FC = () => {
     "Advanced (5-10 years)",
     "Expert (10+ years)",
   ];
+
+  useEffect(() => {
+    if (user && !dataLoaded) {
+      setProfileData({
+        firstName: user.profile?.firstName || "",
+        lastName: user.profile?.lastName || "",
+        email: user.email || "",
+        phone: user.profile?.phone || "",
+        location: user.profile?.location || "",
+        profilePicture: null,
+        profilePicturePreview: user.profile?.avatar && apiService?.getFileUrl ? apiService.getFileUrl(user.profile.avatar) : null,
+        experienceLevel: user.profile?.experienceLevel || "",
+        portfolioUrl: user.profile?.portfolioUrl || "",
+        linkedinUrl: user.profile?.linkedinUrl || "",
+        githubUrl: user.profile?.githubUrl || "",
+        cvFile: null,
+        existingCvUrl: user.profile?.cvUrl || "",
+        bio: user.profile?.bio || "",
+        education: user.profile?.education || "",
+        workExperience: user.profile?.workExperience || "",
+        skills: user.profile?.skills || [],
+        primarySkill: user.profile?.primarySkill || "",
+        yearsOfExperience: user.profile?.yearsOfExperience || "",
+        certifications: user.profile?.certifications || [],
+        availability: user.profile?.availability || "Available",
+        monthlyRate: user.profile?.monthlyRate || "",
+        currency: user.profile?.currency || "USD",
+        preferredJobTypes: user.profile?.preferredJobTypes || [],
+        workLocation: user.profile?.workLocation || "Remote",
+        websiteUrl: user.profile?.websiteUrl || "",
+      });
+      setDataLoaded(true);
+    }
+  }, [user, dataLoaded]);
 
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
@@ -822,7 +858,7 @@ const FreelancerProfileSetup: React.FC = () => {
             <View style={styles.inputFull}>
               {/* #region agent log */}
               {(() => {
-                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:509',message:'CV Upload View render - checking cvFile',data:{hasCvFile:!!profileData.cvFile,cvFileType:typeof profileData.cvFile,cvFileName:profileData.cvFile?.name,cvFileNameType:typeof profileData.cvFile?.name,cvFileKeys:profileData.cvFile ? Object.keys(profileData.cvFile) : null,existingCvUrl:!!profileData.existingCvUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:509', message: 'CV Upload View render - checking cvFile', data: { hasCvFile: !!profileData.cvFile, cvFileType: typeof profileData.cvFile, cvFileName: profileData.cvFile?.name, cvFileNameType: typeof profileData.cvFile?.name, cvFileKeys: profileData.cvFile ? Object.keys(profileData.cvFile) : null, existingCvUrl: !!profileData.existingCvUrl }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
                 return null;
               })()}
               {/* #endregion */}
@@ -830,7 +866,7 @@ const FreelancerProfileSetup: React.FC = () => {
               {/* #region agent log */}
               {(() => {
                 const conditionResult = profileData.existingCvUrl && !profileData.cvFile;
-                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:511',message:'Conditional render check',data:{existingCvUrl:profileData.existingCvUrl,hasCvFile:!!profileData.cvFile,conditionResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:511', message: 'Conditional render check', data: { existingCvUrl: profileData.existingCvUrl, hasCvFile: !!profileData.cvFile, conditionResult }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
                 return null;
               })()}
               {/* #endregion */}
@@ -839,7 +875,7 @@ const FreelancerProfileSetup: React.FC = () => {
                 const leftSide = profileData.existingCvUrl;
                 const rightSide = !profileData.cvFile;
                 const andResult = leftSide && rightSide;
-                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:524',message:'AND expression evaluation',data:{leftSide,leftSideType:typeof leftSide,leftSideString:String(leftSide),rightSide,rightSideType:typeof rightSide,andResult,andResultType:typeof andResult,willRender:!!andResult},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:524', message: 'AND expression evaluation', data: { leftSide, leftSideType: typeof leftSide, leftSideString: String(leftSide), rightSide, rightSideType: typeof rightSide, andResult, andResultType: typeof andResult, willRender: !!andResult }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'E' }) }).catch(() => { });
                 return null;
               })()}
               {/* #endregion */}
@@ -856,7 +892,7 @@ const FreelancerProfileSetup: React.FC = () => {
                   {(() => {
                     const fileName = profileData.cvFile?.name;
                     const displayText = fileName || "Click to upload your CV/Resume";
-                    fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:520',message:'CV file name evaluation',data:{fileName,fileNameType:typeof fileName,fileNameValue:String(fileName),displayText,displayTextType:typeof displayText,hasPeriod:String(fileName || '').includes('.'),firstChar:fileName ? String(fileName)[0] : null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:520', message: 'CV file name evaluation', data: { fileName, fileNameType: typeof fileName, fileNameValue: String(fileName), displayText, displayTextType: typeof displayText, hasPeriod: String(fileName || '').includes('.'), firstChar: fileName ? String(fileName)[0] : null }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'C' }) }).catch(() => { });
                     return null;
                   })()}
                   {/* #endregion */}
@@ -866,14 +902,14 @@ const FreelancerProfileSetup: React.FC = () => {
               {/* #region agent log */}
               {(() => {
                 const conditionResult = !!profileData.cvFile;
-                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:523',message:'Remove button conditional check',data:{hasCvFile:conditionResult,cvFileValue:profileData.cvFile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:523', message: 'Remove button conditional check', data: { hasCvFile: conditionResult, cvFileValue: profileData.cvFile }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'D' }) }).catch(() => { });
                 return null;
               })()}
               {/* #endregion */}
               {/* #region agent log */}
               {(() => {
                 const condition = !!profileData.cvFile;
-                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'FreelancerProfileSetup.rn.tsx:523',message:'Remove button conditional - before render',data:{condition,cvFile:profileData.cvFile,cvFileType:typeof profileData.cvFile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7243/ingest/7d655f1f-d0c2-40e3-af5d-c6a6a3679a1c', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'FreelancerProfileSetup.rn.tsx:523', message: 'Remove button conditional - before render', data: { condition, cvFile: profileData.cvFile, cvFileType: typeof profileData.cvFile }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'F' }) }).catch(() => { });
                 return null;
               })()}
               {/* #endregion */}
@@ -957,6 +993,7 @@ const FreelancerProfileSetup: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle={darkMode ? "light-content" : "dark-content"} />
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           {profileData.profilePicturePreview ? (
@@ -999,10 +1036,10 @@ const FreelancerProfileSetup: React.FC = () => {
                     step.id < currentStep
                       ? "#06b6d4"
                       : step.id === currentStep
-                      ? "#06b6d4"
-                      : darkMode
-                      ? "#4b5563"
-                      : "#d1d5db",
+                        ? "#06b6d4"
+                        : darkMode
+                          ? "#4b5563"
+                          : "#d1d5db",
                 },
               ]}
             />
@@ -1027,8 +1064,8 @@ const FreelancerProfileSetup: React.FC = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         enabled={true}
       >
-        <ScrollView 
-          style={styles.scrollView} 
+        <ScrollView
+          style={styles.scrollView}
           contentContainerStyle={styles.content}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={true}
@@ -1060,7 +1097,7 @@ const FreelancerProfileSetup: React.FC = () => {
                     !profileData.lastName ||
                     !profileData.email ||
                     !profileData.location) &&
-                    styles.buttonDisabled,
+                  styles.buttonDisabled,
                 ]}
                 onPress={() => setCurrentStep(currentStep + 1)}
                 disabled={

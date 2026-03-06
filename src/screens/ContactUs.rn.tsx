@@ -16,14 +16,18 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import { useAppSelector } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
 import apiService from "../services/api-react-native";
+import Footer from "../components/Footer.rn";
+import BottomNav from "../components/BottomNav.rn";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const ContactUs: React.FC = () => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const t = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
@@ -51,7 +55,7 @@ const ContactUs: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${apiService.baseUrl}/contact`, {
+      const response = await fetch(`${apiService.getBaseUrl()}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +144,8 @@ const ContactUs: React.FC = () => {
       flex: 1,
     },
     content: {
-      padding: 20,
+      paddingTop: 20,
+      paddingBottom: 140,
     },
     heroSection: {
       alignItems: "center",
@@ -172,7 +177,7 @@ const ContactUs: React.FC = () => {
     contactCard: {
       flex: 1,
       minWidth: "45%",
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       padding: 20,
       alignItems: "center",
@@ -200,7 +205,7 @@ const ContactUs: React.FC = () => {
       textAlign: "center",
     },
     formSection: {
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       padding: 24,
       borderWidth: 1,
@@ -275,11 +280,26 @@ const ContactUs: React.FC = () => {
       width: 48,
       height: 48,
       borderRadius: 24,
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
       borderColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
+    },
+    backNavContainer: {
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
     },
   });
 
@@ -289,6 +309,20 @@ const ContactUs: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* HomeNavbar removed */}
+      {/* Back Navigation Bar */}
+      <View style={[styles.backNavContainer, { paddingTop: Math.max(insets.top, 12) }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={styles.backText}>Contact Us</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Hero Section */}
         <Animated.View entering={FadeIn.duration(800)} style={styles.heroSection}>
@@ -392,6 +426,7 @@ const ContactUs: React.FC = () => {
             ))}
           </View>
         </Animated.View>
+        <Footer />
       </ScrollView>
     </View>
   );

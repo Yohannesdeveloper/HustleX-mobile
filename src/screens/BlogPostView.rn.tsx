@@ -129,7 +129,7 @@ const BlogPostView: React.FC = () => {
       padding: 16,
       borderBottomWidth: 1,
       borderBottomColor: darkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.6)",
+      backgroundColor: darkMode ? "#111827" : "rgba(255, 255, 255, 0.6)",
     },
     backButton: {
       flexDirection: "row",
@@ -304,8 +304,7 @@ const BlogPostView: React.FC = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={20} color={darkMode ? "#ffffff" : "#000000"} />
-          <Text style={styles.backButtonText}>Back to Blog</Text>
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
         </TouchableOpacity>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Text style={styles.metaInfo}>

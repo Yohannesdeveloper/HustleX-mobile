@@ -179,3 +179,40 @@ export type ApplicationResponse = {
 export type UploadResponse = {
   fileUrl: string;
 };
+
+// Navigation types for React Native
+export type RootStackParamList = {
+  HomeFinal: undefined;
+  Signup: { redirect?: string };
+  Login: undefined;
+  PostJob: undefined;
+  JobListings: undefined;
+  JobDetails: { jobId: string };
+  HiringDashboard: undefined;
+  FreelancingDashboard: undefined;
+  FreelancerMessages: undefined;
+  ChatMessages: undefined;
+  FindFreelancers: undefined;
+  CompanyProfile: undefined;
+  FreelancerProfileSetup: undefined;
+  PreviewJob: undefined;
+  AboutUs: undefined;
+  ContactUs: undefined;
+  FAQ: undefined;
+  Blog: undefined;
+  AccountSettings: undefined;
+  SantimPayWizard: { plan: string; method?: string };
+  BlogPost: { id: string };
+  BlogEdit: { id?: string };
+  BlogAdmin: undefined;
+  SubscriptionAdmin: undefined;
+  JobAdmin: undefined;
+  Chat: undefined;
+  Pricing: undefined;
+  Payment: { plan: string };
+  ForgotPassword: undefined;
+  HowItWorks: undefined;
+  HelpCenter: undefined;
+  EditJob: { id: string };
+  EditBlog: { id: string };
+};

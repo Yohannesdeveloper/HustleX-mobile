@@ -15,14 +15,17 @@ import {
   Platform,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../store/hooks";
 import { useAppSelector } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
+import { getBackendApiUrlSync } from "../utils/portDetector";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { RootStackParamList } from "../types";
 
 const Payment: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const { isAuthenticated } = useAuth();
@@ -30,15 +33,14 @@ const Payment: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [planId, setPlanId] = useState<string>("");
   const [planDetails, setPlanDetails] = useState<any>(null);
+  const [selectedMethod, setSelectedMethod] = useState<string>("telebirr");
 
   const routeParams = (route.params as any) || {};
   const planParam = routeParams.plan || "basic";
 
   useEffect(() => {
     if (!isAuthenticated) {
-      navigation.navigate("Signup" as never, {
-        redirect: `Payment?plan=${planParam}`,
-      } as never);
+      navigation.navigate("Signup", { redirect: `Payment?plan=${planParam}` });
       return;
     }
 
@@ -46,7 +48,7 @@ const Payment: React.FC = () => {
 
     const fetchPlanDetails = async () => {
       try {
-        const baseUrl = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5001/api";
+        const baseUrl = getBackendApiUrlSync();
         const response = await fetch(`${baseUrl}/pricing/plans/${planParam}`);
         const data = await response.json();
         setPlanDetails(data.plan);
@@ -60,10 +62,8 @@ const Payment: React.FC = () => {
   const handlePayment = async () => {
     setIsProcessing(true);
     try {
-      navigation.navigate("SantimPay" as never, {
-        plan: planId,
-        method: "telebirr",
-      } as never);
+      // Fix: Navigate to "SantimPayWizard" which is the registered name in AppNavigator
+      navigation.navigate("SantimPayWizard", { plan: planId, method: selectedMethod });
     } catch (error: any) {
       console.error("Payment error:", error);
       Alert.alert("Error", `Payment failed: ${error.message || "Please try again"}`);
@@ -85,7 +85,7 @@ const Payment: React.FC = () => {
       flex: 1,
     },
     content: {
-      paddingTop: 80,
+      paddingTop: 40,
       paddingBottom: 40,
       paddingHorizontal: 20,
     },
@@ -169,6 +169,12 @@ const Payment: React.FC = () => {
       backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
       borderRadius: 12,
       marginBottom: 12,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    paymentMethodCardSelected: {
+      borderColor: "#06b6d4",
+      backgroundColor: darkMode ? "rgba(6, 182, 212, 0.1)" : "rgba(6, 182, 212, 0.05)",
     },
     paymentMethodIcon: {
       width: 48,
@@ -245,7 +251,7 @@ const Payment: React.FC = () => {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate("Pricing" as never)}
+          onPress={() => navigation.navigate("Pricing")}
         >
           <Ionicons name="arrow-back" size={20} color={darkMode ? "#9ca3af" : "#6b7280"} />
           <Text style={styles.backButtonText}>
@@ -261,7 +267,7 @@ const Payment: React.FC = () => {
             </Text>
           </Text>
           <Text style={styles.headerSubtitle}>
-            {t.payment?.payWithTelebirr || "Pay securely with Telebirr"}
+            {t.payment?.payWithTelebirr || "Pay securely using local mobile money"}
           </Text>
         </Animated.View>
 
@@ -297,9 +303,13 @@ const Payment: React.FC = () => {
           style={styles.paymentMethod}
         >
           <Text style={styles.paymentMethodTitle}>
-            {t.payment?.selectPaymentMethod || "Select Payment Method"}
+            {t.payment?.choosePaymentMethod || "Select Payment Method"}
           </Text>
-          <View style={styles.paymentMethodCard}>
+
+          <TouchableOpacity
+            style={[styles.paymentMethodCard, selectedMethod === "telebirr" && styles.paymentMethodCardSelected]}
+            onPress={() => setSelectedMethod("telebirr")}
+          >
             <View style={styles.paymentMethodIcon}>
               <Ionicons name="phone-portrait" size={24} color="#ffffff" />
             </View>
@@ -309,8 +319,32 @@ const Payment: React.FC = () => {
                 {t.payment?.mobileMoneyPayment || "Pay securely with Telebirr mobile money"}
               </Text>
             </View>
-            <Ionicons name="checkmark-circle" size={24} color="#06b6d4" />
-          </View>
+            <Ionicons
+              name={selectedMethod === "telebirr" ? "checkmark-circle" : "ellipse-outline"}
+              size={24}
+              color={selectedMethod === "telebirr" ? "#06b6d4" : (darkMode ? "#4b5563" : "#d1d5db")}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.paymentMethodCard, selectedMethod === "cbe_birr" && styles.paymentMethodCardSelected]}
+            onPress={() => setSelectedMethod("cbe_birr")}
+          >
+            <View style={[styles.paymentMethodIcon, { backgroundColor: '#7c3aed' }]}>
+              <Ionicons name="wallet" size={24} color="#ffffff" />
+            </View>
+            <View style={styles.paymentMethodInfo}>
+              <Text style={styles.paymentMethodName}>CBE Birr</Text>
+              <Text style={styles.paymentMethodDescription}>
+                Pay using CBE Birr mobile wallet services
+              </Text>
+            </View>
+            <Ionicons
+              name={selectedMethod === "cbe_birr" ? "checkmark-circle" : "ellipse-outline"}
+              size={24}
+              color={selectedMethod === "cbe_birr" ? "#06b6d4" : (darkMode ? "#4b5563" : "#d1d5db")}
+            />
+          </TouchableOpacity>
         </Animated.View>
 
         <TouchableOpacity
@@ -327,7 +361,7 @@ const Payment: React.FC = () => {
             <>
               <Ionicons name="lock-closed" size={20} color="#ffffff" />
               <Text style={styles.payButtonText}>
-                {t.payment?.proceedToPayment || "Proceed to Payment"}
+                {t.payment?.continue || "Proceed to Payment"}
               </Text>
             </>
           )}

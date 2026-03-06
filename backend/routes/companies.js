@@ -21,7 +21,7 @@ router.get("/profile", auth, async (req, res) => {
 router.post("/profile", auth, async (req, res) => {
   try {
     console.log("Received company profile data:", req.body);
-    
+
     const {
       companyName,
       industry,
@@ -34,6 +34,8 @@ router.post("/profile", auth, async (req, res) => {
       foundedYear,
       logo,
       tradeLicense,
+      registrationNumber,
+      taxId,
       verificationData,
       jobPositionAlternatives,
     } = req.body;
@@ -64,6 +66,8 @@ router.post("/profile", auth, async (req, res) => {
       foundedYear,
       logo,
       tradeLicense,
+      registrationNumber,
+      taxId,
       verificationData,
       jobPositionAlternatives,
     };
@@ -76,13 +80,13 @@ router.post("/profile", auth, async (req, res) => {
     });
 
     console.log("Updating company with data:", updateData);
-    
+
     const company = await Company.findOneAndUpdate(
       { userId: req.user._id },
       { ...updateData, userId: req.user._id },
       { new: true, upsert: true }
     );
-    
+
     console.log("Company updated successfully:", company);
 
     res.json({
@@ -91,7 +95,7 @@ router.post("/profile", auth, async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating company profile:", error);
-    
+
     // Handle specific validation errors
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map(err => err.message);
@@ -100,14 +104,14 @@ router.post("/profile", auth, async (req, res) => {
         errors: validationErrors,
       });
     }
-    
+
     // Handle duplicate key errors
     if (error.code === 11000) {
       return res.status(400).json({
         message: "Company profile already exists for this user",
       });
     }
-    
+
     res.status(500).json({
       message: "Failed to update company profile",
       error: error.message,

@@ -23,6 +23,7 @@ import { useAppSelector } from "../store/hooks";
 import { useAuth } from "../store/hooks";
 import apiService from "../services/api-react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const CompanyProfile: React.FC = () => {
   const navigation = useNavigation();
@@ -104,8 +105,8 @@ const CompanyProfile: React.FC = () => {
           phone: companyProfile.contactPhone || "",
           email: companyProfile.contactEmail || "",
           foundedYear: companyProfile.foundedYear?.toString() || "",
-          registrationNumber: "",
-          taxId: "",
+          registrationNumber: companyProfile.registrationNumber || "",
+          taxId: companyProfile.taxId || "",
         });
 
         if (companyProfile.logo) {
@@ -147,8 +148,8 @@ const CompanyProfile: React.FC = () => {
             user.profile.firstName && user.profile.lastName
               ? `${user.profile.firstName} ${user.profile.lastName} Company`
               : user.profile.firstName
-              ? `${user.profile.firstName} Company`
-              : "";
+                ? `${user.profile.firstName} Company`
+                : "";
 
           setCompanyData((prev) => ({
             ...prev,
@@ -293,6 +294,8 @@ const CompanyProfile: React.FC = () => {
         contactEmail: companyData.email,
         contactPhone: companyData.phone,
         foundedYear: companyData.foundedYear ? parseInt(companyData.foundedYear) : undefined,
+        registrationNumber: companyData.registrationNumber,
+        taxId: companyData.taxId,
         logo: logoUrl || logo,
         tradeLicense: tradeLicenseUrl || tradeLicense,
       };
@@ -354,6 +357,7 @@ const CompanyProfile: React.FC = () => {
     },
     content: {
       padding: 20,
+      paddingTop: 30,
     },
     section: {
       backgroundColor: darkMode ? "rgba(31, 41, 55, 0.5)" : "#ffffff",
@@ -550,7 +554,7 @@ const CompanyProfile: React.FC = () => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -858,7 +862,7 @@ const CompanyProfile: React.FC = () => {
           </View>
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -35,9 +35,9 @@ router.post(
     body("password").isLength({ min: 8 }).matches(/^(?=.*[a-zA-Z])(?=.*\d).{8,}$/),
     body("firstName").optional().isString().trim(),
     body("lastName").optional().isString().trim(),
-    body("role").optional().isIn(["freelancer", "client"]),
+    body("role").optional().isIn(["freelancer", "client", "admin"]),
     body("roles").optional().isArray(),
-    body("roles.*").optional().isIn(["freelancer", "client"]),
+    body("roles.*").optional().isIn(["freelancer", "client", "admin"]),
   ],
   async (req, res) => {
     try {
@@ -109,17 +109,17 @@ router.post(
       console.error("Error stack:", error.stack);
       console.error("Error message:", error.message);
       console.error("Error name:", error.name);
-      
+
       // Provide more detailed error message in development
-      const errorMessage = process.env.NODE_ENV === 'development' 
+      const errorMessage = process.env.NODE_ENV === 'development'
         ? error.message || "Server error"
         : "Server error";
-      
-      res.status(500).json({ 
+
+      res.status(500).json({
         message: errorMessage,
-        ...(process.env.NODE_ENV === 'development' && { 
+        ...(process.env.NODE_ENV === 'development' && {
           error: error.message,
-          stack: error.stack 
+          stack: error.stack
         })
       });
     }
@@ -395,7 +395,7 @@ router.put("/profile", auth, async (req, res) => {
 // @desc    Switch current user role
 // @access  Private
 router.post("/switch-role", auth, [
-  body("role").isIn(["freelancer", "client"])
+  body("role").isIn(["freelancer", "client", "admin"])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -443,7 +443,7 @@ router.post("/switch-role", auth, [
 // @desc    Add a new role to user
 // @access  Private
 router.post("/add-role", auth, [
-  body("role").isIn(["freelancer", "client"])
+  body("role").isIn(["freelancer", "client", "admin"])
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -509,12 +509,12 @@ router.get("/check-user", async (req, res) => {
 
     // Check if user exists with timeout
     const findUserPromise = User.findOne({ email: email.toLowerCase() });
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Database query timeout")), 5000)
     );
-    
+
     const user = await Promise.race([findUserPromise, timeoutPromise]);
-    
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -531,16 +531,16 @@ router.get("/check-user", async (req, res) => {
     });
   } catch (error) {
     console.error("Check user error:", error.message || error);
-    
+
     // If it's a database connection error, return 404 to allow signup
-    if (error.message?.includes("timeout") || 
-        error.message?.includes("ENOTFOUND") ||
-        error.message?.includes("MongoServerSelectionError") ||
-        error.name === "MongoServerSelectionError") {
+    if (error.message?.includes("timeout") ||
+      error.message?.includes("ENOTFOUND") ||
+      error.message?.includes("MongoServerSelectionError") ||
+      error.name === "MongoServerSelectionError") {
       console.warn("Check user: Database connection issue, returning 404 to allow signup");
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     // For other errors, return 500
     res.status(500).json({ message: "Server error" });
   }
@@ -567,6 +567,8 @@ router.post("/freelancer-profile", auth, async (req, res) => {
     profile.phone = profileData.phone;
     profile.location = profileData.location;
     profile.bio = profileData.bio;
+    profile.education = profileData.education;
+    profile.workExperience = profileData.workExperience;
 
     // Skills & expertise
     profile.skills = profileData.skills || [];

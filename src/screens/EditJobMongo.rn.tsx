@@ -134,9 +134,9 @@ const EditJobMongo: React.FC = () => {
   // Check authentication
   useEffect(() => {
     if (!isAuthenticated) {
-      navigation.navigate("Signup" as never, {
+      (navigation as any).navigate("Signup", {
         redirect: `/edit-job/${jobId}`,
-      } as never);
+      });
     }
   }, [isAuthenticated, navigation, jobId]);
 
@@ -159,7 +159,7 @@ const EditJobMongo: React.FC = () => {
 
         if (jobOwnerId !== user?._id) {
           Alert.alert("Error", "You don't have permission to edit this job.");
-          navigation.navigate("JobListings" as never);
+          (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" });
           return;
         }
 
@@ -193,7 +193,7 @@ const EditJobMongo: React.FC = () => {
       } catch (error) {
         console.error("Error fetching job:", error);
         Alert.alert("Error", "Failed to load job data.");
-        navigation.navigate("JobListings" as never);
+        (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" });
       } finally {
         setLoading(false);
       }
@@ -235,7 +235,7 @@ const EditJobMongo: React.FC = () => {
       Alert.alert("Success", "Job updated successfully!", [
         {
           text: "OK",
-          onPress: () => navigation.navigate("JobListings" as never),
+          onPress: () => (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" }),
         },
       ]);
     } catch (error: any) {
@@ -435,7 +435,7 @@ const EditJobMongo: React.FC = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.navigate("JobListings" as never)}
+            onPress={() => (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" })}
           >
             <Ionicons name="arrow-back" size={20} color={darkMode ? "#22d3ee" : "#0891b2"} />
             <Text style={styles.backButtonText}>Back to Jobs</Text>
@@ -600,7 +600,7 @@ const EditJobMongo: React.FC = () => {
         {/* Requirements Section */}
         <Animated.View entering={FadeIn.delay(300)} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="person-check" size={24} color={darkMode ? "#22d3ee" : "#0891b2"} />
+            <Ionicons name="person" size={24} color={darkMode ? "#22d3ee" : "#0891b2"} />
             <Text style={styles.sectionTitle}>Requirements</Text>
           </View>
 

@@ -51,6 +51,14 @@ const companySchema = new mongoose.Schema(
     tradeLicense: {
       type: String, // URL to uploaded trade license file
     },
+    registrationNumber: {
+      type: String,
+      trim: true,
+    },
+    taxId: {
+      type: String,
+      trim: true,
+    },
     verificationStatus: {
       type: String,
       enum: ["pending", "verified", "rejected"],

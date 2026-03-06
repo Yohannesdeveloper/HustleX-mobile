@@ -12,10 +12,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  useWindowDimensions,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAppSelector } from "../store/hooks";
+import { useAppSelector, useAuth } from "../store/hooks";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 interface JobData {
@@ -53,52 +54,12 @@ interface JobData {
 const PreviewJob: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 768;
   const darkMode = useAppSelector((s) => s.theme.darkMode);
+  const { user } = useAuth();
 
   const jobData = (route.params as any)?.jobData as JobData;
-
-  if (!jobData) {
-    return (
-      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
-        <Text style={[styles.errorTitle, { color: darkMode ? "#ffffff" : "#000000" }]}>
-          No Job Data Found
-        </Text>
-        <Text style={[styles.errorText, { color: darkMode ? "#9ca3af" : "#6b7280" }]}>
-          Please go back and try posting a job again.
-        </Text>
-        <TouchableOpacity
-          style={styles.errorButton}
-          onPress={() => navigation.navigate("PostJob" as never)}
-        >
-          <Text style={styles.errorButtonText}>Post a Job</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "Not specified";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const handleNext = () => {
-    navigation.navigate("JobListings" as never, {
-      message: "Job posted successfully!",
-      newJobId: jobData._id,
-    } as never);
-  };
-
-  const handleEdit = () => {
-    navigation.navigate("PostJob" as never, {
-      jobData,
-      editMode: true,
-    } as never);
-  };
 
   const styles = StyleSheet.create({
     container: {
@@ -120,6 +81,7 @@ const PreviewJob: React.FC = () => {
       borderBottomWidth: 1,
       borderBottomColor: darkMode ? "rgba(6, 182, 212, 0.2)" : "rgba(6, 182, 212, 0.1)",
       backgroundColor: darkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(255, 255, 255, 0.2)",
+      marginTop: 20,
     },
     backButton: {
       flexDirection: "row",
@@ -156,6 +118,7 @@ const PreviewJob: React.FC = () => {
     },
     content: {
       padding: 20,
+      paddingBottom: 40,
     },
     mainContent: {
       gap: 20,
@@ -205,6 +168,7 @@ const PreviewJob: React.FC = () => {
       paddingVertical: 12,
       borderRadius: 16,
       backgroundColor: "#06b6d4",
+      alignSelf: 'flex-start',
     },
     budgetText: {
       fontSize: 18,
@@ -239,6 +203,7 @@ const PreviewJob: React.FC = () => {
       fontSize: 14,
       fontWeight: "600",
       color: darkMode ? "#ffffff" : "#1f2937",
+      textAlign: "center",
     },
     section: {
       backgroundColor: darkMode ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.4)",
@@ -360,12 +325,52 @@ const PreviewJob: React.FC = () => {
     },
   });
 
+  if (!jobData) {
+    return (
+      <View style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+        <Text style={[styles.errorTitle, { color: darkMode ? "#ffffff" : "#000000" }]}>
+          No Job Data Found
+        </Text>
+        <Text style={[styles.errorText, { color: darkMode ? "#9ca3af" : "#6b7280" }]}>
+          Please go back and try posting a job again.
+        </Text>
+        <TouchableOpacity
+          style={styles.errorButton}
+          onPress={() => navigation.navigate("PostJob" as never)}
+        >
+          <Text style={styles.errorButtonText}>Post a Job</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Not specified";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const handleNext = () => {
+    navigation.navigate("MainSwipeableTabs" as never);
+  };
+
+  const handleEdit = () => {
+    (navigation.navigate as any)("PostJob", {
+      jobData,
+      editMode: true,
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.navigate("PostJob" as never)}
+          onPress={() => (navigation.navigate as any)("PostJob")}
         >
           <Ionicons name="arrow-back" size={20} color={darkMode ? "#06b6d4" : "#0891b2"} />
           <Text style={styles.backButtonText}>Back to Post Job</Text>
@@ -377,12 +382,12 @@ const PreviewJob: React.FC = () => {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={{ flexDirection: "row", gap: 20 }}>
-          <View style={{ flex: 2, gap: 20 }}>
+        <View style={{ flexDirection: isLargeScreen ? "row" : "column", gap: 20 }}>
+          <View style={isLargeScreen ? { flex: 2, gap: 20 } : { width: '100%', gap: 20 }}>
             {/* Job Header */}
             <Animated.View entering={FadeIn.duration(500)} style={styles.jobHeader}>
-              <View style={styles.jobHeaderTop}>
-                <View style={styles.jobHeaderLeft}>
+              <View style={[styles.jobHeaderTop, !isLargeScreen && { flexDirection: 'column', gap: 16 }]}>
+                <View style={[styles.jobHeaderLeft, !isLargeScreen && { width: '100%' }]}>
                   <Text style={styles.jobTitle}>{jobData.title}</Text>
                   {jobData.company && (
                     <View style={styles.companyName}>
@@ -451,7 +456,7 @@ const PreviewJob: React.FC = () => {
             {/* Job Description */}
             <Animated.View entering={FadeIn.duration(500).delay(100)} style={styles.section}>
               <View style={styles.sectionTitle}>
-                <Ionicons name="target" size={24} color={darkMode ? "#06b6d4" : "#0891b2"} />
+                <Ionicons name="document-text" size={24} color={darkMode ? "#06b6d4" : "#0891b2"} />
                 <Text style={styles.sectionTitle}>Job Description</Text>
               </View>
               <Text style={styles.sectionText}>{jobData.description}</Text>
@@ -476,7 +481,7 @@ const PreviewJob: React.FC = () => {
           </View>
 
           {/* Sidebar */}
-          <View style={{ flex: 1, gap: 20 }}>
+          <View style={isLargeScreen ? { flex: 1, gap: 20 } : { width: '100%', gap: 20 }}>
             <Animated.View entering={FadeIn.duration(500).delay(300)} style={styles.sidebarCard}>
               <Text style={styles.sidebarTitle}>Job Overview</Text>
               <View style={styles.sidebarItem}>
@@ -500,16 +505,36 @@ const PreviewJob: React.FC = () => {
             </Animated.View>
 
             <Animated.View entering={FadeIn.duration(500).delay(400)} style={styles.sidebarCard}>
-              <TouchableOpacity style={[styles.actionButton, styles.actionButtonPrimary]} onPress={handleNext}>
+              <TouchableOpacity
+                style={[styles.actionButton, styles.actionButtonPrimary]}
+                onPress={() => (navigation as any).navigate("MainSwipeableTabs", { screen: "JobListings" })}
+              >
                 <Ionicons name="eye" size={20} color="#ffffff" />
-                <Text style={styles.actionButtonText}>View in Job Listings</Text>
+                <Text style={styles.actionButtonText}>View Job Listings</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionButton, styles.actionButtonSecondary]} onPress={handleEdit}>
-                <Ionicons name="create" size={20} color="#ffffff" />
-                <Text style={styles.actionButtonText}>Edit Job Details</Text>
-              </TouchableOpacity>
+
+              {user?.roles?.includes('admin') ? (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonSecondary]}
+                  onPress={() => navigation.navigate("JobAdmin" as never)}
+                >
+                  <Ionicons name="shield-checkmark" size={20} color="#ffffff" />
+                  <Text style={styles.actionButtonText}>Moderate Jobs</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.actionButtonSecondary]}
+                  onPress={handleEdit}
+                >
+                  <Ionicons name="create" size={20} color="#ffffff" />
+                  <Text style={styles.actionButtonText}>Edit Job Details</Text>
+                </TouchableOpacity>
+              )}
+
               <Text style={styles.successText}>
-                Your job has been successfully submitted and is waiting approval!
+                {user?.roles?.includes('admin')
+                  ? "As an admin, your job is active and you can moderate others."
+                  : "Your job has been submitted and is waiting for admin approval!"}
               </Text>
             </Animated.View>
           </View>

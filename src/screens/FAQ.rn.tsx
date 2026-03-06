@@ -1,8 +1,3 @@
-/**
- * React Native FAQ Screen
- * Complete conversion maintaining exact UI/UX and functionality
- */
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -12,13 +7,19 @@ import {
   StyleSheet,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppSelector } from "../store/hooks";
 import { useTranslation } from "../hooks/useTranslation";
+import { RootStackParamList } from "../types";
+import Footer from "../components/Footer.rn";
+import BottomNav from "../components/BottomNav.rn";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
 const FAQ: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
   const darkMode = useAppSelector((s) => s.theme.darkMode);
   const t = useTranslation();
   const [openItems, setOpenItems] = useState<number[]>([]);
@@ -96,11 +97,28 @@ const FAQ: React.FC = () => {
       flex: 1,
     },
     content: {
-      padding: 20,
+      paddingTop: 20,
+      paddingBottom: 140,
+    },
+    backNavContainer: {
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+    },
+    backButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    backText: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#ffffff" : "#000000",
     },
     introSection: {
       alignItems: "center",
       marginBottom: 32,
+      paddingHorizontal: 20,
     },
     introTitle: {
       fontSize: 32,
@@ -117,7 +135,7 @@ const FAQ: React.FC = () => {
       maxWidth: "100%",
     },
     faqItem: {
-      backgroundColor: darkMode ? "rgba(0, 0, 0, 0.5)" : "rgba(255, 255, 255, 0.5)",
+      backgroundColor: darkMode ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.5)",
       borderRadius: 16,
       marginBottom: 12,
       borderWidth: 1,
@@ -192,13 +210,26 @@ const FAQ: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      {/* HomeNavbar removed */}
+      {/* Back Navigation Bar */}
+      <View style={[styles.backNavContainer, { paddingTop: Math.max(insets.top, 12) }]}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.reset({
+            index: 0,
+            routes: [{ name: "MainSwipeableTabs" as never }],
+          })}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#000000"} />
+          <Text style={styles.backText}>FAQ</Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* Introduction */}
         <Animated.View entering={FadeIn.duration(800)} style={styles.introSection}>
-          <Text style={styles.introTitle}>Got Questions? We've Got Answers!</Text>
+          <Text style={styles.introTitle}>{t.faq?.gotQuestions || "Got Questions? We've Got Answers!"}</Text>
           <Text style={styles.introDescription}>
-            Find answers to the most common questions about using HustleX. Can't find what you're
-            looking for? Contact our support team.
+            {t.faq?.gotAnswers || "Find answers to the most common questions about using HustleX. Can't find what you're looking for? Contact our support team."}
           </Text>
         </Animated.View>
 
@@ -244,17 +275,18 @@ const FAQ: React.FC = () => {
 
         {/* Contact Section */}
         <Animated.View entering={FadeIn.duration(800).delay(900)} style={styles.contactSection}>
-          <Text style={styles.contactTitle}>Still Have Questions?</Text>
+          <Text style={styles.contactTitle}>{t.faq?.stillHaveQuestions || "Still Have Questions?"}</Text>
           <Text style={styles.contactText}>
-            Can't find the answer you're looking for? Please chat with our friendly team.
+            {t.faq?.contactSupportDesc || "Our support team is here to help you succeed on HustleX."}
           </Text>
           <TouchableOpacity
             style={styles.contactButton}
             onPress={() => navigation.navigate("ContactUs" as never)}
           >
-            <Text style={styles.contactButtonText}>Contact Us</Text>
+            <Text style={styles.contactButtonText}>{t.faq?.contactSupport || "Contact Us"}</Text>
           </TouchableOpacity>
         </Animated.View>
+        <Footer />
       </ScrollView>
     </View>
   );

@@ -23,12 +23,21 @@
         "foregroundImage": "./public/Logo.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.hustlex.app"
+      "package": "com.hustlex.app",
+      "compileSdkVersion": 36,
+      "targetSdkVersion": 36,
+      "minSdkVersion": 24
     },
     "web": {
       "favicon": "./public/Logo.png",
       "bundler": "metro"
     },
-    "scheme": "hustlex"
+    "scheme": "hustlex",
+    "extra": {
+      "eas": {
+        "projectId": "3e351fc0-c8bb-4f3b-9afe-22f0cb85607d"
+      },
+      "backendUrl": null
+    }
   }
 }

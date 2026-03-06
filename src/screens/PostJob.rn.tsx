@@ -15,9 +15,11 @@ import {
   Platform,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAuth } from "../store/hooks";
@@ -203,8 +205,13 @@ const PostJob: React.FC = () => {
       };
 
       const response = await apiService.createJob(jobData);
-      Alert.alert("Success", "Job posted successfully!");
-      navigation.navigate("PreviewJob" as never, { jobData: response.job } as never);
+
+      const successMessage = user?.roles?.includes('admin')
+        ? "Job posted and approved successfully! It is now live on the platform."
+        : "Job submitted successfully! It will be reviewed by our team shortly.";
+
+      Alert.alert("Success", successMessage);
+      (navigation as any).navigate("PreviewJob", { jobData: response.job });
     } catch (error: any) {
       console.error("Error posting job:", error);
       if (error.response?.status === 403) {
@@ -219,61 +226,7 @@ const PostJob: React.FC = () => {
     }
   };
 
-  const handleSaveDraft = async () => {
-    if (!isAuthenticated || !user) {
-      navigation.navigate("Signup" as never);
-      return;
-    }
 
-    if (!title.trim() || !description.trim() || !category.trim()) {
-      Alert.alert("Error", "Please fill in at least Title, Description, and Category to save as draft.");
-      return;
-    }
-
-    try {
-      const jobData = {
-        title,
-        description,
-        company,
-        category,
-        jobSite,
-        jobSector,
-        compensationType,
-        compensationAmount,
-        currency,
-        budget: compensationAmount && currency 
-          ? `${compensationAmount} ${currency}` 
-          : "To be discussed",
-        deadline,
-        experience,
-        jobType,
-        workLocation: workLocation || "Remote",
-        skills,
-        visibility,
-        jobLink: jobLink.trim() || null,
-        gender,
-        vacancies: vacancies ? parseInt(vacancies) : 1,
-        address: address.trim() || null,
-        country,
-        city: city.trim() || null,
-        education: education.trim() || null,
-        status: "draft",
-        applicants: 0,
-        views: 0,
-        jobId: `job-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        postedBy: user._id,
-        isActive: false,
-        applicationCount: 0,
-      };
-
-      await apiService.createJob(jobData);
-      Alert.alert("Success", "Job saved as draft successfully!");
-      navigation.navigate("HiringDashboard" as never);
-    } catch (error: any) {
-      console.error("Error saving draft:", error);
-      Alert.alert("Error", error.response?.data?.message || "Please try again.");
-    }
-  };
 
   const toggleSkill = (skill: string) => {
     if (skills.includes(skill)) {
@@ -299,6 +252,24 @@ const PostJob: React.FC = () => {
     container: {
       flex: 1,
       backgroundColor: darkMode ? "#000000" : "#ffffff",
+    },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: darkMode ? "#374151" : "#e5e7eb",
+      backgroundColor: darkMode ? "#000000" : "#ffffff",
+    },
+    headerBackButton: {
+      padding: 8,
+    },
+    headerTitle: {
+      fontSize: 20,
+      fontWeight: "700",
+      color: darkMode ? "#06b6d4" : "#06b6d4",
     },
     scrollView: {
       flex: 1,
@@ -483,452 +454,461 @@ const PostJob: React.FC = () => {
   });
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{t.postJob.postAJob}</Text>
-        <Text style={styles.subtitle}>Create an attractive job listing to find the best talent</Text>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.headerBackButton}
+          onPress={() => navigation.navigate("HiringDashboard" as never)}
+        >
+          <Ionicons name="arrow-back" size={24} color={darkMode ? "#ffffff" : "#111827"} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{t.postJob.postAJob}</Text>
+        <View style={{ width: 40 }} />
+      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
+          <Text style={styles.subtitle}>Create an attractive job listing to find the best talent</Text>
 
-        {/* Subscription Status */}
-        {!loadingStatus && postingStatus && (
-          <View style={[
-            styles.statusBanner,
-            postingStatus.canPost ? styles.statusBannerSuccess : styles.statusBannerError
-          ]}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{
-                  fontSize: 16,
-                  fontWeight: "700",
-                  color: darkMode ? "#ffffff" : "#000000",
-                  marginBottom: 4,
-                }}>
-                  {postingStatus.canPost
-                    ? `✅ You can post jobs (${postingStatus.planName})`
-                    : `❌ Cannot post jobs`}
-                </Text>
-                <Text style={{
-                  fontSize: 12,
-                  color: darkMode ? "#d1d5db" : "#4b5563",
-                }}>
-                  {postingStatus.canPost
-                    ? postingStatus.limits.limit === -1
-                      ? `Monthly jobs posted: ${postingStatus.stats.monthlyJobs} (Unlimited)`
-                      : `Monthly jobs posted: ${postingStatus.limits.current}/${postingStatus.limits.limit}`
-                    : postingStatus.message || "Please upgrade your plan to post jobs."}
-                </Text>
-              </View>
-              {!postingStatus.canPost && (
-                <TouchableOpacity
-                  style={{
-                    paddingHorizontal: 16,
-                    paddingVertical: 8,
-                    backgroundColor: "#06b6d4",
-                    borderRadius: 8,
-                  }}
-                  onPress={() => navigation.navigate("Pricing" as never)}
-                >
-                  <Text style={{ color: "#ffffff", fontWeight: "700" }}>
-                    {t.postJob.upgradePlan}
+          {/* Subscription Status */}
+          {!loadingStatus && postingStatus && (
+            <View style={[
+              styles.statusBanner,
+              postingStatus.canPost ? styles.statusBannerSuccess : styles.statusBannerError
+            ]}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{
+                    fontSize: 16,
+                    fontWeight: "700",
+                    color: darkMode ? "#ffffff" : "#000000",
+                    marginBottom: 4,
+                  }}>
+                    {postingStatus.canPost
+                      ? `✅ You can post jobs (${postingStatus.planName})`
+                      : `❌ Cannot post jobs`}
                   </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* Job Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            <Ionicons name="briefcase" size={24} color="#06b6d4" />
-            Job Details
-          </Text>
-
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Job Title *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder={t.postJob.enterJobTitle}
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={title}
-                onChangeText={setTitle}
-              />
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Job Site *</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={jobSite}
-                  onValueChange={setJobSite}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Job Site" value="" />
-                  {jobSites.map((site) => (
-                    <Picker.Item key={site} label={site} value={site} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Job Type *</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={jobType}
-                  onValueChange={setJobType}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Job Type" value="" />
-                  {jobTypes.map((jt) => (
-                    <Picker.Item key={jt} label={jt} value={jt} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Job Sector *</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={jobSector}
-                  onValueChange={setJobSector}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Job Sector" value="" />
-                  {jobSectors.map((sector) => (
-                    <Picker.Item key={sector} label={sector} value={sector} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Category *</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter category"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={category}
-                onChangeText={setCategory}
-              />
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Company</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Company name"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={company}
-                onChangeText={setCompany}
-              />
-            </View>
-          </View>
-
-          {/* Description */}
-          <Text style={styles.label}>Job Description *</Text>
-          <TextInput
-            style={styles.textArea}
-            placeholder="Tell us about your job..."
-            placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-            value={description}
-            onChangeText={(text) => {
-              if (text.length <= maxDescriptionLength) {
-                setDescription(text);
-              }
-            }}
-            multiline
-            numberOfLines={10}
-          />
-          <Text style={styles.charCounter}>
-            {descriptionCharsLeft} chars left
-          </Text>
-
-          {/* Skills */}
-          <Text style={styles.label}>Skills and Expertise (Max 6)</Text>
-          <Text style={{
-            fontSize: 12,
-            color: darkMode ? "#9ca3af" : "#6b7280",
-            marginBottom: 8,
-          }}>
-            {6 - skills.length} left
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
-            <View style={styles.skillsContainer}>
-              {allSkills.map((skill) => (
-                <TouchableOpacity
-                  key={skill}
-                  style={[
-                    styles.skillButton,
-                    skills.includes(skill) ? styles.skillButtonSelected : styles.skillButtonUnselected
-                  ]}
-                  onPress={() => toggleSkill(skill)}
-                >
-                  <Text style={[
-                    styles.skillText,
-                    skills.includes(skill) ? styles.skillTextSelected : styles.skillTextUnselected
-                  ]}>
-                    {skill}
+                  <Text style={{
+                    fontSize: 12,
+                    color: darkMode ? "#d1d5db" : "#4b5563",
+                  }}>
+                    {postingStatus.canPost
+                      ? postingStatus.limits.limit === -1
+                        ? `Monthly jobs posted: ${postingStatus.stats.monthlyJobs} (Unlimited)`
+                        : `Monthly jobs posted: ${postingStatus.limits.current}/${postingStatus.limits.limit}`
+                      : postingStatus.message || "Please upgrade your plan to post jobs."}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-
-          {/* Work Location */}
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Work Location</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={workLocation}
-                  onValueChange={setWorkLocation}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  {workLocations.map((loc) => (
-                    <Picker.Item key={loc} label={loc} value={loc} />
-                  ))}
-                </Picker>
+                </View>
+                {!postingStatus.canPost && (
+                  <TouchableOpacity
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      backgroundColor: "#06b6d4",
+                      borderRadius: 8,
+                    }}
+                    onPress={() => navigation.navigate("Pricing" as never)}
+                  >
+                    <Text style={{ color: "#ffffff", fontWeight: "700" }}>
+                      {t.postJob.upgradePlan}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Country</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Country"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={country}
-                onChangeText={setCountry}
-              />
-            </View>
-          </View>
+          )}
 
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>City</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="City"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={city}
-                onChangeText={setCity}
-              />
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Address (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Work address"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={address}
-                onChangeText={setAddress}
-              />
-            </View>
-          </View>
+          {/* Job Details Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              <Ionicons name="briefcase" size={24} color="#06b6d4" />
+              Job Details
+            </Text>
 
-          {/* Compensation */}
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Compensation Type</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={compensationType}
-                  onValueChange={setCompensationType}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Compensation Type" value="" />
-                  {compensationTypes.map((type) => (
-                    <Picker.Item key={type} label={type} value={type} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Amount & Currency</Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Job Title *</Text>
                 <TextInput
-                  style={[styles.input, { flex: 2 }]}
-                  placeholder="Amount"
+                  style={styles.input}
+                  placeholder={t.postJob.enterJobTitle}
                   placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                  value={compensationAmount}
-                  onChangeText={setCompensationAmount}
-                  keyboardType="numeric"
+                  value={title}
+                  onChangeText={setTitle}
                 />
-                <View style={[styles.picker, { flex: 1, height: 50 }]}>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Job Site *</Text>
+                <View style={styles.picker}>
                   <Picker
-                    selectedValue={currency}
-                    onValueChange={setCurrency}
+                    selectedValue={jobSite}
+                    onValueChange={setJobSite}
                     style={{ color: darkMode ? "#ffffff" : "#000000" }}
                   >
-                    {currencies.map((curr) => (
-                      <Picker.Item key={curr} label={curr} value={curr} />
+                    <Picker.Item label="Select Job Site" value="" />
+                    {jobSites.map((site) => (
+                      <Picker.Item key={site} label={site} value={site} />
                     ))}
                   </Picker>
                 </View>
               </View>
             </View>
-          </View>
 
-          {/* Other Fields */}
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Experience Level</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={experience}
-                  onValueChange={setExperience}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Experience Level" value="" />
-                  {experienceLevels.map((level) => (
-                    <Picker.Item key={level} label={level} value={level} />
-                  ))}
-                </Picker>
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Job Type *</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={jobType}
+                    onValueChange={setJobType}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Job Type" value="" />
+                    {jobTypes.map((jt) => (
+                      <Picker.Item key={jt} label={jt} value={jt} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Job Sector *</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={jobSector}
+                    onValueChange={setJobSector}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Job Sector" value="" />
+                    {jobSectors.map((sector) => (
+                      <Picker.Item key={sector} label={sector} value={sector} />
+                    ))}
+                  </Picker>
+                </View>
               </View>
             </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Education</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={education}
-                  onValueChange={setEducation}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Education" value="" />
-                  {educationLevels.map((edu) => (
-                    <Picker.Item key={edu} label={edu} value={edu} />
-                  ))}
-                </Picker>
+
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Category *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter category"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={category}
+                  onChangeText={setCategory}
+                />
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Company</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Company name"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={company}
+                  onChangeText={setCompany}
+                />
               </View>
             </View>
-          </View>
 
-          <View style={styles.gridRow}>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Gender Preference</Text>
-              <View style={styles.picker}>
-                <Picker
-                  selectedValue={gender}
-                  onValueChange={setGender}
-                  style={{ color: darkMode ? "#ffffff" : "#000000" }}
-                >
-                  <Picker.Item label="Select Gender" value="" />
-                  {genderOptions.map((opt) => (
-                    <Picker.Item key={opt} label={opt} value={opt} />
-                  ))}
-                </Picker>
-              </View>
-            </View>
-            <View style={styles.gridItem}>
-              <Text style={styles.label}>Vacancies (optional)</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Number of vacancies"
-                placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-                value={vacancies}
-                onChangeText={setVacancies}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-
-          <Text style={styles.label}>Job Deadline (optional) - Default: 15 days</Text>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker(true)}
-          >
-            <Text style={styles.dateButtonText}>
-              {deadline || "Select deadline"}
-            </Text>
-            <Ionicons name="calendar" size={20} color="#06b6d4" />
-          </TouchableOpacity>
-
-          {showDatePicker && (
-            <DateTimePicker
-              value={selectedDate}
-              mode="date"
-              display="default"
-              onChange={onDateChange}
-              minimumDate={new Date()}
+            {/* Description */}
+            <Text style={styles.label}>Job Description *</Text>
+            <TextInput
+              style={styles.textArea}
+              placeholder="Tell us about your job..."
+              placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+              value={description}
+              onChangeText={(text) => {
+                if (text.length <= maxDescriptionLength) {
+                  setDescription(text);
+                }
+              }}
+              multiline
+              numberOfLines={10}
             />
-          )}
+            <Text style={styles.charCounter}>
+              {descriptionCharsLeft} chars left
+            </Text>
 
-          <Text style={styles.label}>Job Link (optional)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="https://..."
-            placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
-            value={jobLink}
-            onChangeText={setJobLink}
-            keyboardType="url"
-            autoCapitalize="none"
-          />
+            {/* Skills */}
+            <Text style={styles.label}>Skills and Expertise (Max 6)</Text>
+            <Text style={{
+              fontSize: 12,
+              color: darkMode ? "#9ca3af" : "#6b7280",
+              marginBottom: 8,
+            }}>
+              {6 - skills.length} left
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              <View style={styles.skillsContainer}>
+                {allSkills.map((skill) => (
+                  <TouchableOpacity
+                    key={skill}
+                    style={[
+                      styles.skillButton,
+                      skills.includes(skill) ? styles.skillButtonSelected : styles.skillButtonUnselected
+                    ]}
+                    onPress={() => toggleSkill(skill)}
+                  >
+                    <Text style={[
+                      styles.skillText,
+                      skills.includes(skill) ? styles.skillTextSelected : styles.skillTextUnselected
+                    ]}>
+                      {skill}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
 
-          <Text style={styles.label}>Visibility</Text>
-          <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+            {/* Work Location */}
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Work Location</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={workLocation}
+                    onValueChange={setWorkLocation}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    {workLocations.map((loc) => (
+                      <Picker.Item key={loc} label={loc} value={loc} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Country</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Country"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={country}
+                  onChangeText={setCountry}
+                />
+              </View>
+            </View>
+
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>City</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="City"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={city}
+                  onChangeText={setCity}
+                />
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Address (optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Work address"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={address}
+                  onChangeText={setAddress}
+                />
+              </View>
+            </View>
+
+            {/* Compensation */}
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Compensation Type</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={compensationType}
+                    onValueChange={setCompensationType}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Compensation Type" value="" />
+                    {compensationTypes.map((type) => (
+                      <Picker.Item key={type} label={type} value={type} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Amount & Currency</Text>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    style={[styles.input, { flex: 2 }]}
+                    placeholder="Amount"
+                    placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                    value={compensationAmount}
+                    onChangeText={setCompensationAmount}
+                    keyboardType="numeric"
+                  />
+                  <View style={[styles.picker, { flex: 1, height: 50 }]}>
+                    <Picker
+                      selectedValue={currency}
+                      onValueChange={setCurrency}
+                      style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                    >
+                      {currencies.map((curr) => (
+                        <Picker.Item key={curr} label={curr} value={curr} />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Other Fields */}
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Experience Level</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={experience}
+                    onValueChange={setExperience}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Experience Level" value="" />
+                    {experienceLevels.map((level) => (
+                      <Picker.Item key={level} label={level} value={level} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Education</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={education}
+                    onValueChange={setEducation}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Education" value="" />
+                    {educationLevels.map((edu) => (
+                      <Picker.Item key={edu} label={edu} value={edu} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.gridRow}>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Gender Preference</Text>
+                <View style={styles.picker}>
+                  <Picker
+                    selectedValue={gender}
+                    onValueChange={setGender}
+                    style={{ color: darkMode ? "#ffffff" : "#000000" }}
+                  >
+                    <Picker.Item label="Select Gender" value="" />
+                    {genderOptions.map((opt) => (
+                      <Picker.Item key={opt} label={opt} value={opt} />
+                    ))}
+                  </Picker>
+                </View>
+              </View>
+              <View style={styles.gridItem}>
+                <Text style={styles.label}>Vacancies (optional)</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Number of vacancies"
+                  placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+                  value={vacancies}
+                  onChangeText={setVacancies}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <Text style={styles.label}>Job Deadline (optional) - Default: 15 days</Text>
             <TouchableOpacity
-              style={[
-                styles.button,
-                styles.buttonSecondary,
-                visibility === "public" && { backgroundColor: "#06b6d4" }
-              ]}
-              onPress={() => setVisibility("public")}
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
             >
-              <Text style={[
-                styles.buttonText,
-                visibility === "public" ? styles.buttonTextPrimary : styles.buttonTextSecondary
-              ]}>
-                Public
+              <Text style={styles.dateButtonText}>
+                {deadline || "Select deadline"}
               </Text>
+              <Ionicons name="calendar" size={20} color="#06b6d4" />
             </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="default"
+                onChange={onDateChange}
+                minimumDate={new Date()}
+              />
+            )}
+
+            <Text style={styles.label}>Job Link (optional)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="https://..."
+              placeholderTextColor={darkMode ? "#9ca3af" : "#6b7280"}
+              value={jobLink}
+              onChangeText={setJobLink}
+              keyboardType="url"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Visibility</Text>
+            <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  styles.buttonSecondary,
+                  visibility === "public" && { backgroundColor: "#06b6d4" }
+                ]}
+                onPress={() => setVisibility("public")}
+              >
+                <Text style={[
+                  styles.buttonText,
+                  visibility === "public" ? styles.buttonTextPrimary : styles.buttonTextSecondary
+                ]}>
+                  Public
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.button,
+                  styles.buttonSecondary,
+                  visibility === "private" && { backgroundColor: "#06b6d4" }
+                ]}
+                onPress={() => setVisibility("private")}
+              >
+                <Text style={[
+                  styles.buttonText,
+                  visibility === "private" ? styles.buttonTextPrimary : styles.buttonTextSecondary
+                ]}>
+                  Private
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.buttonRow}>
             <TouchableOpacity
-              style={[
-                styles.button,
-                styles.buttonSecondary,
-                visibility === "private" && { backgroundColor: "#06b6d4" }
-              ]}
-              onPress={() => setVisibility("private")}
+              style={[styles.button, styles.buttonSecondary]}
+              onPress={() => navigation.goBack()}
             >
-              <Text style={[
-                styles.buttonText,
-                visibility === "private" ? styles.buttonTextPrimary : styles.buttonTextSecondary
-              ]}>
-                Private
-              </Text>
+              <Text style={styles.buttonTextSecondary}>Go Back</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, styles.buttonPrimary]}
+              onPress={handleSubmit}
+              disabled={isSubmitting || (postingStatus && !postingStatus.canPost)}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonTextPrimary}>Continue</Text>
+              )}
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.buttonTextSecondary}>Go Back</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonSecondary]}
-            onPress={handleSaveDraft}
-          >
-            <Text style={styles.buttonTextSecondary}>Save As Draft</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.buttonPrimary]}
-            onPress={handleSubmit}
-            disabled={isSubmitting || (postingStatus && !postingStatus.canPost)}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonTextPrimary}>Continue</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

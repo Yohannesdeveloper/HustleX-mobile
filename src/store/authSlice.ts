@@ -89,7 +89,7 @@ export const register = createAsyncThunk(
     userData: {
       email: string;
       password: string;
-      role: "freelancer" | "client";
+      role: "freelancer" | "client" | "admin";
       roles?: string[];
       firstName?: string;
       lastName?: string;
@@ -112,7 +112,7 @@ export const register = createAsyncThunk(
 
 export const switchRole = createAsyncThunk(
   "auth/switchRole",
-  async (role: "freelancer" | "client", { rejectWithValue }) => {
+  async (role: "freelancer" | "client" | "admin", { rejectWithValue }) => {
     try {
       const updatedUser = await apiService.switchRole(role);
       return updatedUser;
@@ -124,7 +124,7 @@ export const switchRole = createAsyncThunk(
 
 export const addRole = createAsyncThunk(
   "auth/addRole",
-  async (role: "freelancer" | "client", { rejectWithValue }) => {
+  async (role: "freelancer" | "client" | "admin", { rejectWithValue }) => {
     try {
       const updatedUser = await apiService.addRole(role);
       return updatedUser;
